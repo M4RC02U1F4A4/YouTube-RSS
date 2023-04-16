@@ -1,6 +1,9 @@
-import requests
+# python first-time-upload.py http:.....
 
-url = "http://127.0.0.1:5001"
+import requests
+import sys
+
+url = sys.argv[1]
 
 with open("links.txt") as file:
     links = [line.rstrip() for line in file]
