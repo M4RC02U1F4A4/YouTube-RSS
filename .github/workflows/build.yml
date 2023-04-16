@@ -24,26 +24,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          context: "{{defaultContext}}:web"
-          tags: m4rc02u1f4a4/youtube-rss:web-latest
+          tags: m4rc02u1f4a4/youtube-rss:latest
 
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
           push: true
-          context: "{{defaultContext}}:web"
-          tags: m4rc02u1f4a4/youtube-rss:web-${{  github.ref_name }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          context: "{{defaultContext}}:rss"
-          tags: m4rc02u1f4a4/youtube-rss:rss-latest
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          context: "{{defaultContext}}:rss"
-          tags: m4rc02u1f4a4/youtube-rss:rss-${{  github.ref_name }}
+          tags: m4rc02u1f4a4/youtube-rss:${{  github.ref_name }}

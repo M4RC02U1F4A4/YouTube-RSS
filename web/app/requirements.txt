@@ -1,5 +1,0 @@
-flask
-pymongo
-gunicorn
-numerize
-requests

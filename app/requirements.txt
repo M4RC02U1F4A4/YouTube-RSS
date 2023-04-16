@@ -1,6 +1,9 @@
+flask
 pymongo
-apscheduler
+gunicorn
+numerize
 requests
+apscheduler
 feedparser
 isodate
 schedule

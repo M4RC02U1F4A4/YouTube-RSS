@@ -89,6 +89,7 @@ def update_channel():
         }
         channelsDB.update_one({"_id":f"{c['_id']}"}, {"$set": data})
 
+print('RSS STARTED')
 
 schedule.every().day.at("00:00").do(update_channel)
 schedule.every().hour.do(update_video)

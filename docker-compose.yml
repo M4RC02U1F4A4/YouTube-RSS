@@ -3,7 +3,7 @@ version: '3.7'
 services:
 
   web:
-    image: m4rc02u1f4a4/youtube-rss:web-latest
+    image: m4rc02u1f4a4/youtube-rss:latest
     restart: always
     environment:
       MONGODB_USERNAME: changeme
@@ -11,21 +11,9 @@ services:
       MONGODB_HOST: db
       MONGODB_PORT: 27017
       G_API_KEY: API KEY
+      PYTHONUNBUFFERED: 1
     ports:
       - 80:5001
-    depends_on:
-      - db
-
-  rss:
-    image: m4rc02u1f4a4/youtube-rss:rss-latest
-    environment:
-      PYTHONUNBUFFERED: 1
-      MONGODB_USERNAME: changeme
-      MONGODB_PASSWORD: changeme
-      MONGODB_HOST: db
-      MONGODB_PORT: 27017
-      TZ: Europe/Rome
-      G_API_KEY: API KEY
     depends_on:
       - db
 
