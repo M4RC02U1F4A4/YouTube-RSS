@@ -1,0 +1,6 @@
+pymongo
+apscheduler
+requests
+feedparser
+isodate
+schedule

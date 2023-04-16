@@ -1,0 +1,34 @@
+{% include "header.html" %}
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-2 position-relative">
+            <div class="sticky-top">
+                {% include "sidebar.html" %}
+            </div>
+        </div>
+        <div class="col-sm-10 position-relative">
+            <div class="row">
+                {% for channel in channels %}
+                <div class="col-sm-3 mt-5 position-relative">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <img class="logoc-rad" src="{{ channel['logo'] }}" width="103">
+                        </div> 
+                        <div class="col-sm-8 text-center">
+                            <div class="channel-title fw-bold">{{ channel['title'] }}</div>
+                            <div>{{ channel['_id']|get_subscriberCount }} subscribers</div>
+                            <div>{{ channel['videoCount'] }} videos</div>
+                            <div>{{ channel['viewCount'] }} views</div>
+                        </div>
+                    </div>
+                    <a class="stretched-link" href="https://www.youtube.com/channel/{{ channel['_id'] }}" target="_blank"></a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "footer.html" %}
