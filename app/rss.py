@@ -18,9 +18,11 @@ mongo_client = pymongo.MongoClient(f"mongodb://{MONGODB_USERNAME}:{MONGODB_PASSW
 db = mongo_client.youtube
 channelsDB = db['channels']
 videosDB = db['videos']
+randomDB = db['random']
 
 
 def update_video():
+    print("Updating video...")
     rss_link = "https://www.youtube.com/feeds/videos.xml?channel_id="
     for x in channelsDB.find():
         feed = feedparser.parse(f"{rss_link}{x['_id']}")
@@ -62,6 +64,10 @@ def update_video():
                         "duration": dur.total_seconds(),
                         "hidden": hidden
                     })
+                try:
+                    randomDB.insert_one({"_id":"last_update", "time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"})
+                except:
+                    randomDB.update_one({"_id":"last_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"}})
             except Exception as e:
                 print(e)
 
@@ -94,6 +100,8 @@ print('RSS STARTED')
 schedule.every().day.at("00:00").do(update_channel)
 schedule.every().hour.do(update_video)
 schedule.every().day.at("06:00").do(delete_video)
+
+update_video()
 
 while True:
     schedule.run_pending()

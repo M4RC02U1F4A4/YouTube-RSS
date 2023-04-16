@@ -1,9 +1,11 @@
 <main class="d-flex flex-nowrap">
     <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
         <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-          <svg class="bi pe-none me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg>
+          <img class="me-4" src="{{ url_for('static', filename='media/favicon.png') }}" width="40px">
           <span class="fs-4">YouTube RSS</span>
         </a>
+        <hr>
+        <span class="text-center">{{ last_update }}</span>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
           <li class="nav-item">

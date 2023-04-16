@@ -1,3 +1,4 @@
 .env
 docker_db/
 links.txt
+app/__pycache__/

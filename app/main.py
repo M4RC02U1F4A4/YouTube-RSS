@@ -16,6 +16,7 @@ mongo_client = pymongo.MongoClient(f"mongodb://{MONGODB_USERNAME}:{MONGODB_PASSW
 db = mongo_client.youtube
 channelsDB = db['channels']
 videosDB = db['videos']
+randomDB = db['random']
 
 
 app = Flask(__name__)
@@ -67,21 +68,21 @@ def convert_time(time):
 @app.route('/')
 def home():
     videos = videosDB.find({"viewed":0}).sort('published', -1)
-    return render_template('home.html', videos=videos, active='home')
+    return render_template('home.html', videos=videos, active='home', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
 @app.route('/channels')
 def channels():
     channels = channelsDB.find({}).sort('subscriberCount', -1)
-    return render_template('channels.html', channels=channels, active='channels')
+    return render_template('channels.html', channels=channels, active='channels', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
 @app.route('/videos')
 def videos():
     videos = videosDB.find({"hidden":0}).sort('published', -1)
-    return render_template('videos.html', videos=videos, active='videos')
+    return render_template('videos.html', videos=videos, active='videos', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
 @app.route('/manage')
 def manage():
-    return render_template('manage.html', active='manage')
+    return render_template('manage.html', active='manage', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
 @app.route('/read/<id>/<element_id>')
 def read(id, element_id=0):
@@ -120,4 +121,4 @@ def add():
 
     return redirect("/")
 
-# app.run(debug=True, port=5001, host='0.0.0.0')
+app.run(debug=True, port=5001, host='0.0.0.0')
