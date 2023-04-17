@@ -84,15 +84,15 @@ def videos():
 def manage():
     return render_template('manage.html', active='manage', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
-@app.route('/read/<id>/<element_id>')
-def read(id, element_id=0):
+@app.route('/read/<id>')
+def read(id):
     videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":1}})
-    return redirect(f"/#{element_id}")
+    return "OK", 200
 
-@app.route('/unread/<id>/<element_id>')
-def unread(id, element_id=0):
+@app.route('/unread/<id>')
+def unread(id):
     videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":0}})
-    return redirect(f"/videos#{element_id}")
+    return "OK", 200
 
 
 @app.route('/add', methods = ['POST'])
@@ -121,4 +121,4 @@ def add():
 
     return redirect("/")
 
-# app.run(debug=True, port=5001, host='0.0.0.0')
+app.run(debug=True, port=5001, host='0.0.0.0')

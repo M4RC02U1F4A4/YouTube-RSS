@@ -1,5 +1,6 @@
 {% include "header.html" %}
 
+{% include "script.html" %}
 
 <div class="container-fluid">
     <div class="row">
@@ -11,15 +12,19 @@
         <div class="col-sm-10 position-relative">
             <div class="row">
                 {% for video in videos %}
-                <div class="col-sm-3 mt-5" id="{{ loop.index0 }}">
+                <div class="col-sm-3 mt-5" id="div{{ video['_id'] }}">
                     <div class="row">
                         <div class="position-relative">
                             <img src="{{ video['thumbnail']}}" width="360" class="thumbnail-rad">
-                            <a class="stretched-link" href="/unread/{{ video['_id'] }}/{{ loop.index0 }}"></a>
+                            <a class="stretched-link" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank"></a>
                         </div>
                     </div>
                     <div class="row mt-1">
-                        <a class="video-title fw-bold" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank">[{{ video['duration']|convert_time }}] - {{ video['title'] }}</a>
+                        <span>
+                            <a class="text-success fw-bold" id="{{ video['_id'] }}" onclick="unread(this.id);return false;" href="#">ADD</a>
+                            <span  class="fw-bold"> - [{{ video['duration']|convert_time }}] - </span>
+                            <a class="video-title fw-bold" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank">{{ video['title'] }}</a>
+                        </span>
                     </div>
                     <div class="row mt-2 position-relative">
                         <div class="col-1">

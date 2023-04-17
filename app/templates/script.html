@@ -1,0 +1,17 @@
+<script>
+    function httpGetAsync(theUrl, callback) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", theUrl, true); 
+        xmlHttp.send(null);
+    }
+
+    function read(id) {
+        console.log(id);
+        document.getElementById('div'+id).outerHTML = ""
+        httpGetAsync("/read/"+id)
+    }
+    function unread(id) {
+        console.log(id);
+        httpGetAsync("/unread/"+id)
+    }
+</script>
