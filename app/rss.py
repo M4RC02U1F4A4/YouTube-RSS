@@ -33,6 +33,7 @@ def update_video():
             first_time = 0
         
         for entry in feed.entries:
+            print(entry.yt_videoid)
             try:
                 if not videosDB.find_one({"_id":f"{entry.yt_videoid}"}) and (datetime.now(timezone.utc) - datetime.fromisoformat(entry.published).replace(tzinfo=timezone.utc)).days < 30:
                     print(entry.yt_videoid)
