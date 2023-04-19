@@ -68,7 +68,7 @@ def convert_time(time):
 @app.route('/')
 def home():
     videos = videosDB.find({"viewed":0}).sort('published', -1)
-    return render_template('home.html', videos=videos, active='home', last_update=randomDB.find_one({"_id":"last_update"})['time'])
+    return render_template('home.html', videos=list(videos), active='home', last_update=randomDB.find_one({"_id":"last_update"})['time'])
 
 @app.route('/channels')
 def channels():
@@ -121,4 +121,4 @@ def add():
 
     return redirect("/")
 
-# app.run(debug=True, port=5001, host='0.0.0.0')
+app.run(debug=True, port=5001, host='0.0.0.0')
