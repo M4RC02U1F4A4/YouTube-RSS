@@ -1,5 +1,6 @@
 .thumbnail-rad {
     border-radius: 17px !important; 
+    object-fit: cover;
 }
 .logo-rad {
     border-radius: 36px !important; 
