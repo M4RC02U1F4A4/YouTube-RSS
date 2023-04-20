@@ -4,19 +4,19 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-sm-2 position-relative">
+        <div class="col-lg-2 position-relative">
             <div class="sticky-top">
                 {% include "sidebar.html" %}
             </div>
         </div>
-        <div class="col-sm-10 position-relative">
+        <div class="col-lg-10 position-relative">
             <div class="row">
                 {% for video in videos %}
-                <div class="col-sm-3 mt-5" id="div{{ video['_id'] }}">
+                <div class="col-lg-3 mt-5" id="div{{ video['_id'] }}">
                     <div class="row">
-                        <div class="position-relative">
+                        <div class="position-relative"> 
                             <img src="{{ video['thumbnail']}}" width="360" height="203" class="thumbnail-rad">
-                            <a class="stretched-link" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank"></a>
+                            <a class="stretched-link" href="https://www.youtube.com/watch?v={{ video['_id'] }}" id="{{ video['_id'] }}" onclick="read(this.id);" target="_blank"></a>
                         </div>
                     </div>
                     <div class="row mt-1">
