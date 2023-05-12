@@ -108,7 +108,7 @@ def read(id):
 @app.route('/unread/<id>')
 def unread(id):
     videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":0}})
-    return "OK", 200
+    return redirect('/')
 
 
 @app.route('/add', methods = ['POST'])

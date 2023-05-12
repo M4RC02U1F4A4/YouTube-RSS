@@ -21,7 +21,7 @@
                     </div>
                     <div class="row mt-1">
                         <span>
-                            <a class="text-success fw-bold" id="{{ video['_id'] }}" onclick="unread(this.id);return false;" href="#">ADD</a>
+                            <a class="text-success fw-bold" id="{{ video['_id'] }}" href="/unread/{{ video['_id'] }}">ADD</a>
                             <span  class="fw-bold"> - [{{ video['duration']|convert_time }}] - </span>
                             <a class="video-title fw-bold" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank">{{ video['title'] }}</a>
                         </span>
