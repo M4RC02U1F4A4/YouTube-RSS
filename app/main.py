@@ -69,29 +69,36 @@ def calc_len():
     channels_len = channelsDB.count_documents({})
     return videos_len, all_videos_len, channels_len
 
+def last_update():
+    try:
+        return randomDB.find_one({"_id":"last_update"})['time']
+    except:
+        return 'NA'
+
 @app.route('/')
 def home():
     videos = videosDB.find({"viewed":0}).sort('published', -1)
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('home.html', videos=videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='home', last_update=randomDB.find_one({"_id":"last_update"})['time'])
+    
+    return render_template('home.html', videos=videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='home', last_update=last_update())
 
 @app.route('/channels')
 def channels():
     channels = channelsDB.find({}).sort('subscriberCount', -1)
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('channels.html', channels=channels, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='channels', last_update=randomDB.find_one({"_id":"last_update"})['time'])
+    return render_template('channels.html', channels=channels, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='channels', last_update=last_update())
 
 @app.route('/videos')
 def videos():
     all_videos = videosDB.find({"hidden":0}).sort('published', -1)
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('videos.html', videos=all_videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='videos', last_update=randomDB.find_one({"_id":"last_update"})['time'])
+    return render_template('videos.html', videos=all_videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='videos', last_update=last_update())
 
 @app.route('/manage')
 def manage():
     videos_len = videosDB.count_documents({"viewed":0})
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('manage.html', videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='manage', last_update=randomDB.find_one({"_id":"last_update"})['time'])
+    return render_template('manage.html', videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='manage', last_update=last_update())
 
 @app.route('/read/<id>')
 def read(id):
