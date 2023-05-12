@@ -137,4 +137,16 @@ def add():
 
     return redirect("/")
 
+@app.route('/remove', methods = ['POST'])
+def remove():
+    link = request.form['link']
+
+    google_session = google_consent(link)
+    r = google_session.get(link)
+    id = extract_id(r.text)
+
+    channelsDB.delete_one({"_id":id})
+    return redirect('/manage')
+
+
 # app.run(debug=True, port=5001, host='0.0.0.0')
