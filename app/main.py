@@ -146,6 +146,7 @@ def remove():
     id = extract_id(r.text)
 
     channelsDB.delete_one({"_id":id})
+    videosDB.delete_many({"channel":id})
     return redirect('/manage')
 
 
