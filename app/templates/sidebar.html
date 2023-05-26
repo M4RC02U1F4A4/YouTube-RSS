@@ -7,7 +7,9 @@
         <hr>
         <span class="text-center">{{ last_update }}</span>
         <hr>
-        <ul class="nav nav-pills flex-column mb-auto">
+        <span class="text-center">{{ time | convert_time | beautify_time }}</span>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto ">
           <li class="nav-item">
             {% if active == 'home' %}
             <a href="/" class="nav-link active" aria-current="page">
@@ -19,7 +21,7 @@
             </a>
           </li>
           <hr>
-          <li>
+          <li class="d-none d-sm-block">
             {% if active == 'channels' %}
             <a href="/channels" class="nav-link active" aria-current="page">
             {% else %}
@@ -40,7 +42,7 @@
             </a>
           </li>
           <hr>
-          <li>
+          <li class="d-none d-sm-block">
             {% if active == 'manage' %}
             <a href="/manage" class="nav-link active" aria-current="page">
             {% else %}

@@ -63,6 +63,11 @@ def get_subscriberCount(id):
 def convert_time(time):
     return str(datetime.timedelta(seconds=time))
 
+@app.template_filter('beautify_time')
+def beautify_time(time):
+    time = time.split(":")
+    return f"{time[0]}h {time[1]}min {time[2]}sec"
+
 def calc_len():
     videos_len = videosDB.count_documents({"viewed":0})
     all_videos_len = videosDB.count_documents({"hidden":0})
@@ -74,31 +79,65 @@ def last_update():
         return randomDB.find_one({"_id":"last_update"})['time']
     except:
         return 'NA'
+    
+def time_to_watch():
+    total_time = 0
+    videos = videosDB.find({"viewed":0})
+    for v in videos:
+        total_time += v['duration']
+    return total_time
 
 @app.route('/')
 def home():
     videos = videosDB.find({"viewed":0}).sort('published', -1)
     videos_len, all_videos_len, channels_len = calc_len()
     
-    return render_template('home.html', videos=videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='home', last_update=last_update())
+    return render_template('home.html',
+                           videos=videos,
+                           videos_len=videos_len,
+                           all_videos_len=all_videos_len,
+                           channels_len=channels_len,
+                           active='home',
+                           last_update=last_update(),
+                           time = time_to_watch())
 
 @app.route('/channels')
 def channels():
     channels = channelsDB.find({}).sort('subscriberCount', -1)
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('channels.html', channels=channels, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='channels', last_update=last_update())
+    return render_template('channels.html',
+                           channels=channels,
+                           videos_len=videos_len,
+                           all_videos_len=all_videos_len,
+                           channels_len=channels_len,
+                           active='channels',
+                           last_update=last_update(),
+                           time = time_to_watch())
 
 @app.route('/videos')
 def videos():
     all_videos = videosDB.find({"hidden":0}).sort('published', -1)
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('videos.html', videos=all_videos, videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='videos', last_update=last_update())
+    return render_template('videos.html',
+                           videos=all_videos,
+                           videos_len=videos_len,
+                           all_videos_len=all_videos_len,
+                           channels_len=channels_len,
+                           active='videos',
+                           last_update=last_update(),
+                           time = time_to_watch())
 
 @app.route('/manage')
 def manage():
     videos_len = videosDB.count_documents({"viewed":0})
     videos_len, all_videos_len, channels_len = calc_len()
-    return render_template('manage.html', videos_len=videos_len, all_videos_len=all_videos_len, channels_len=channels_len, active='manage', last_update=last_update())
+    return render_template('manage.html',
+                           videos_len=videos_len,
+                           all_videos_len=all_videos_len,
+                           channels_len=channels_len,
+                           active='manage',
+                           last_update=last_update(),
+                           time = time_to_watch())
 
 @app.route('/read/<id>')
 def read(id):

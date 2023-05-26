@@ -12,10 +12,10 @@
         <div class="col-lg-10 position-relative">
             <div class="row">
                 {% for video in videos %}
-                <div class="col-lg-3 mt-5" id="div{{ video['_id'] }}">
+                <div class="col-lg-3 col-md-4 col-sm-6 mt-5" id="div{{ video['_id'] }}">
                     <div class="row">
-                        <div class="position-relative"> 
-                            <img src="{{ video['thumbnail']}}" width="360" height="203" class="thumbnail-rad">
+                        <div class="position-relative text-center"> 
+                            <img src="{{ video['thumbnail']}}" width="360" height="203" class="img-fluid thumbnail-rad">
                             <a class="stretched-link" href="https://www.youtube.com/watch?v={{ video['_id'] }}" id="{{ video['_id'] }}" onclick="read(this.id);" target="_blank"></a>
                         </div>
                     </div>
