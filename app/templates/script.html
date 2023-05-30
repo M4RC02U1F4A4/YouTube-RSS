@@ -8,7 +8,8 @@
     function read(id) {
         // console.log(id);
         document.getElementById('div'+id).outerHTML = ""
-        document.getElementById('videos_len').innerHTML = Number(document.getElementById('videos_len').innerHTML) - 1
+        document.getElementById('videos_len1').innerHTML = Number(document.getElementById('videos_len1').innerHTML) - 1
+        document.getElementById('videos_len2').innerHTML = Number(document.getElementById('videos_len2').innerHTML) - 1
         httpGetAsync("/read/"+id)
     }
 </script>
