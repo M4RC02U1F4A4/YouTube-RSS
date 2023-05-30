@@ -3,27 +3,27 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-lg-2 position-relative">
+        <div class="col-xl-2">
             <div class="sticky-top">
                 {% include "sidebar.html" %}
             </div>
         </div>
-        <div class="col-lg-10 position-relative">
-            <div class="row">
+        <div class="col-xl-10">
+            <div class="row justify-content-center justify-content-xl-start">
                 {% for channel in channels %}
-                <div class="col-lg-3 mt-5 position-relative">
+                <div class="col channel-card mt-5 position-relative">
                     <div class="row">
-                        <div class="col-lg-3">
+                        <div class="col-md-5">
                             <img class="logoc-rad" src="{{ channel['logo'] }}" width="103">
                         </div> 
-                        <div class="col-lg-8 text-center">
+                        <div class="col">
                             <div class="channel-title fw-bold">{{ channel['title'] }}</div>
                             <div>{{ channel['_id']|get_subscriberCount }} subscribers</div>
                             <div>{{ channel['videoCount'] }} videos</div>
                             <div>{{ channel['viewCount'] }} views</div>
                         </div>
                     </div>
-                    <a class="stretched-link" href="https://www.youtube.com/channel/{{ channel['_id'] }}" target="_blank"></a>
+                    <!-- <a class="stretched-link" href="https://www.youtube.com/channel/{{ channel['_id'] }}" target="_blank"></a> -->
                 </div>
                 {% endfor %}
             </div>
