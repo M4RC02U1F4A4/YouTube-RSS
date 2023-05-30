@@ -1,57 +1,115 @@
-<main class="d-flex flex-nowrap justify-content-center">
-    <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-          <img class="me-4" src="{{ url_for('static', filename='media/favicon.png') }}" width="40px">
-          <span class="fs-4">YouTube RSS</span>
-        </a>
-        <hr>
-        <span class="text-center">{{ last_update }}</span>
-        <hr>
-        <span class="text-center">{{ time | convert_time | beautify_time }}</span>
-        <hr>
-        <ul class="nav nav-pills flex-column mb-auto ">
-          <li class="nav-item">
-            {% if active == 'home' %}
-            <a href="/" class="nav-link active" aria-current="page">
-            {% else %}
-            <a href="/" class="nav-link text-white" aria-current="page">
-            {% endif %}
-              <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#home"></use></svg>
-              Home (<span id="videos_len">{{ videos_len }}</span>)
-            </a>
-          </li>
-          <hr>
-          <li class="d-none d-sm-block">
-            {% if active == 'channels' %}
-            <a href="/channels" class="nav-link active" aria-current="page">
-            {% else %}
-            <a href="/channels" class="nav-link text-white" aria-current="page">
-            {% endif %}
-              <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
-              Channels ({{ channels_len }})
-            </a>
-          </li>
-          <li>
-            {% if active == 'videos' %}
-            <a href="/videos" class="nav-link active" aria-current="page">
-            {% else %}
-            <a href="/videos" class="nav-link text-white" aria-current="page">
-            {% endif %}
-              <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
-              Videos ({{ all_videos_len }})
-            </a>
-          </li>
-          <hr>
-          <li class="d-none d-sm-block">
-            {% if active == 'manage' %}
-            <a href="/manage" class="nav-link active" aria-current="page">
-            {% else %}
-            <a href="/manage" class="nav-link text-white" aria-current="page">
-            {% endif %}
-              <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#grid"></use></svg>
-              Manage
-            </a>
-          </li>
-        </ul>
-    </div>
-</main>
+<nav  class="navbar navbar-dark bg-dark">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+      <img class="me-4" src="{{ url_for('static', filename='media/favicon.png') }}" width="40px">
+      <span class="fs-4">YouTube RSS</span>
+    </a>
+    <button class="navbar-toggler d-xl-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+</nav>
+
+<ul class="navbar-nav justify-content-end flex-grow-1 pe-3 collapse nav-pills text-white" id="collapseMenu">
+  <hr>
+  <li class="nav-item">
+    <span class="text-center nav-link">{{ last_update }}</span>
+  </li>
+  <li class="nav-item">
+    <span class="text-center nav-link fw-bold">{{ time | convert_time | beautify_time }}</span>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'home' %}
+    <a href="/" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#home"></use></svg>
+      Home (<span id="videos_len">{{ videos_len }}</span>)
+    </a>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'channels' %}
+    <a href="/channels" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/channels" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
+      Channels ({{ channels_len }})
+    </a>
+  </li>
+  <li class="nav-item">
+    {% if active == 'videos' %}
+    <a href="/videos" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/videos" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
+      Videos ({{ all_videos_len }})
+    </a>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'manage' %}
+    <a href="/manage" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/manage" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#grid"></use></svg>
+      Manage
+    </a>
+  </li>
+</ul>
+
+<ul class="navbar-nav justify-content-end flex-grow-1 pe-3 nav-pills text-white d-none d-xl-block" id="collapseMenu">
+  <hr>
+  <li class="nav-item">
+    <span class="text-center nav-link">{{ last_update }}</span>
+  </li>
+  <li class="nav-item">
+    <span class="text-center nav-link fw-bold">{{ time | convert_time | beautify_time }}</span>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'home' %}
+    <a href="/" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#home"></use></svg>
+      Home (<span id="videos_len">{{ videos_len }}</span>)
+    </a>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'channels' %}
+    <a href="/channels" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/channels" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
+      Channels ({{ channels_len }})
+    </a>
+  </li>
+  <li class="nav-item">
+    {% if active == 'videos' %}
+    <a href="/videos" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/videos" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
+      Videos ({{ all_videos_len }})
+    </a>
+  </li>
+  <hr>
+  <li class="nav-item">
+    {% if active == 'manage' %}
+    <a href="/manage" class="nav-link active" aria-current="page">
+    {% else %}
+    <a href="/manage" class="nav-link text-white" aria-current="page">
+    {% endif %}
+      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#grid"></use></svg>
+      Manage
+    </a>
+  </li>
+</ul>
