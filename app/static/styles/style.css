@@ -20,4 +20,7 @@
 .video-card {
     max-width: 380px  !important;
 }
+.channel-card {
+    max-width: 380px  !important;
+}
 .navbar-collapse ul {height: 100vh;}
