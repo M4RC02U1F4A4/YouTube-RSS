@@ -22,7 +22,7 @@
                     <div class="row mt-1">
                         <span>
                             <a class="text-danger fw-bold" id="{{ video['_id'] }}" onclick="read(this.id);return false;" href="#">REMOVE</a>
-                            <span  class="fw-bold"> - [{{ video['duration']|convert_time }}] - </span>
+                            <span class="fw-bold" id="time{{ video['_id'] }}"> - [{{ video['duration']|convert_time }}] - </span>
                             <a class="video-title fw-bold" href="https://www.youtube.com/watch?v={{ video['_id'] }}" target="_blank">{{ video['title'] }}</a>
                         </span>
                     </div>

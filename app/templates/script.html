@@ -5,11 +5,63 @@
         xmlHttp.send(null);
     }
 
+    function total_to_sec(tempo) {
+        var temp = tempo.split(' ');
+
+        var h = parseInt(temp[0].replace('h', ''));
+        var m = parseInt(temp[1].replace('min', ''));
+        var s = parseInt(temp[2].replace('sec', ''));
+
+        return (h * 3600) + (m * 60) + s;
+    }
+
+    function video_to_sec(tempo) {
+        var temp = tempo.split(':');
+
+        var h = parseInt(temp[0]);
+        var m = parseInt(temp[1]);
+        var s = parseInt(temp[2]);
+
+        return (h * 3600) + (m * 60) + s;
+    }
+
+    function from_sec(t) {
+        var h = Math.floor(t / 3600);
+        var m = Math.floor((t % 3600) / 60);
+        var s = t % 60;
+        var res = "";
+
+        if (h > 0) {
+            res += h + "h ";
+        } else {
+            res += "0h ";
+        }
+
+        if (m > 0 || h > 0) {
+            res += m.toString().padStart(2, "0") + "min ";
+        } else {
+            res += "00min ";
+        }
+
+        res += s.toString().padStart(2, "0") + "sec";
+        return res;
+    }
+
     function read(id) {
         // console.log(id);
+        t_video = document.getElementById('time'+id).innerHTML.replace(" - [", "").replace("] - ", "")
+        t_total = document.getElementById('videos_time1').innerHTML
+
+        t_total = total_to_sec(t_total)
+        t_video = video_to_sec(t_video)
+
+        document.getElementById('videos_time1').innerHTML = from_sec(t_total-t_video)
+        document.getElementById('videos_time2').innerHTML = from_sec(t_total-t_video)
+
         document.getElementById('div'+id).outerHTML = ""
         document.getElementById('videos_len1').innerHTML = Number(document.getElementById('videos_len1').innerHTML) - 1
         document.getElementById('videos_len2').innerHTML = Number(document.getElementById('videos_len2').innerHTML) - 1
+        
         httpGetAsync("/read/"+id)
     }
 </script>
