@@ -8,60 +8,63 @@
     </button>
 </nav>
 
-<ul class="navbar-nav justify-content-end flex-grow-1 pe-3 collapse nav-pills text-white" id="collapseMenu">
-  <hr>
-  <li class="nav-item">
-    <span class="text-center nav-link">{{ last_update }}</span>
-  </li>
-  <li class="nav-item">
-    <span class="text-center nav-link fw-bold">{{ time | convert_time | beautify_time }}</span>
-  </li>
-  <hr>
-  <li class="nav-item">
-    {% if active == 'home' %}
-    <a href="/" class="nav-link active" aria-current="page">
-    {% else %}
-    <a href="/" class="nav-link text-white" aria-current="page">
-    {% endif %}
-      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#home"></use></svg>
-      Home (<span id="videos_len1">{{ videos_len }}</span>)
-    </a>
-  </li>
-  <hr>
-  <li class="nav-item">
-    {% if active == 'channels' %}
-    <a href="/channels" class="nav-link active" aria-current="page">
-    {% else %}
-    <a href="/channels" class="nav-link text-white" aria-current="page">
-    {% endif %}
-      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
-      Channels ({{ channels_len }})
-    </a>
-  </li>
-  <li class="nav-item">
-    {% if active == 'videos' %}
-    <a href="/videos" class="nav-link active" aria-current="page">
-    {% else %}
-    <a href="/videos" class="nav-link text-white" aria-current="page">
-    {% endif %}
-      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
-      Videos ({{ all_videos_len }})
-    </a>
-  </li>
-  <hr>
-  <li class="nav-item">
-    {% if active == 'manage' %}
-    <a href="/manage" class="nav-link active" aria-current="page">
-    {% else %}
-    <a href="/manage" class="nav-link text-white" aria-current="page">
-    {% endif %}
-      <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#grid"></use></svg>
-      Manage
-    </a>
-  </li>
-</ul>
+<div class="collapse"  id="collapseMenu">
+  <ul class="navbar-nav justify-content-end flex-grow-1 pe-3 nav-pills text-white">
+    <hr>
+    <li class="nav-item">
+      <span class="text-center nav-link">{{ last_update }}</span>
+    </li>
+    <li class="nav-item">
+      <span class="text-center nav-link fw-bold">{{ time | convert_time | beautify_time }}</span>
+    </li>
+    <hr>
+    <li class="nav-item">
+      {% if active == 'home' %}
+      <a href="/" class="nav-link active" aria-current="page">
+      {% else %}
+      <a href="/" class="nav-link text-white" aria-current="page">
+      {% endif %}
+        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#home"></use></svg>
+        Home (<span id="videos_len1">{{ videos_len }}</span>)
+      </a>
+    </li>
+    <hr>
+    <li class="nav-item">
+      {% if active == 'channels' %}
+      <a href="/channels" class="nav-link active" aria-current="page">
+      {% else %}
+      <a href="/channels" class="nav-link text-white" aria-current="page">
+      {% endif %}
+        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
+        Channels ({{ channels_len }})
+      </a>
+    </li>
+    <li class="nav-item">
+      {% if active == 'videos' %}
+      <a href="/videos" class="nav-link active" aria-current="page">
+      {% else %}
+      <a href="/videos" class="nav-link text-white" aria-current="page">
+      {% endif %}
+        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
+        Videos ({{ all_videos_len }})
+      </a>
+    </li>
+    <hr>
+    <li class="nav-item">
+      {% if active == 'manage' %}
+      <a href="/manage" class="nav-link active" aria-current="page">
+      {% else %}
+      <a href="/manage" class="nav-link text-white" aria-current="page">
+      {% endif %}
+        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#grid"></use></svg>
+        Manage
+      </a>
+    </li>
+  </ul>
+</div>
 
-<ul class="navbar-nav justify-content-end flex-grow-1 pe-3 nav-pills text-white d-none d-xl-block" id="collapseMenu">
+
+<ul class="navbar-nav justify-content-end flex-grow-1 pe-3 nav-pills text-white d-none d-xl-block">
   <hr>
   <li class="nav-item">
     <span class="text-center nav-link">{{ last_update }}</span>
