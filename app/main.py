@@ -21,29 +21,6 @@ randomDB = db['random']
 
 app = Flask(__name__)
 
-def google_consent(link):
-    s = requests.Session()
-    s.get(link)
-    d = {
-            'gl':'IT',
-            'm':'false',
-            'pc':'yt',
-            'continue':f'{link}',
-            'x':'6',
-            'bl':'boq_identityfrontenduiserver_20230411.08_p1',
-            'hl':'en',
-            'src':'1',
-            'cm':'2',
-            'set_eom':'true'
-        }
-    s.post("https://consent.youtube.com/save", data=d)
-    return s
-
-def extract_id(text):
-    return re.findall("https:\/\/www\.youtube\.com\/channel\/[a-zA-Z0-9_-]*", text)[0].replace("https://www.youtube.com/channel/", "")
-
-
-
 @app.template_filter('get_logo')
 def get_logo(id):
     channel = channelsDB.find_one({"_id":id})
@@ -152,13 +129,23 @@ def unread(id):
 
 @app.route('/add', methods = ['POST'])
 def add():
-    link = request.form['link']
+    search = request.form['search']
+    result = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q={search}&type=channel&key={G_API_KEY}&maxResults=12").json()
     
-    google_session = google_consent(link)
-    r = google_session.get(link)
-    id = extract_id(r.text)
-    result = requests.get(f"https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id={id}&key={G_API_KEY}").json()
+    videos_len = videosDB.count_documents({"viewed":0})
+    videos_len, all_videos_len, channels_len = calc_len()
+    return render_template('manage.html',
+                           result=result,
+                           videos_len=videos_len,
+                           all_videos_len=all_videos_len,
+                           channels_len=channels_len,
+                           active='manage',
+                           last_update=last_update(),
+                           time = time_to_watch())
 
+@app.route('/add/<id>', methods = ['GET'])
+def add_id(id):
+    result = requests.get(f"https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id={id}&key={G_API_KEY}").json()
     data = {
         "_id":f"{result['items'][0]['id']}",
         "title":f"{result['items'][0]['snippet']['title']}",
@@ -178,11 +165,7 @@ def add():
 
 @app.route('/remove', methods = ['POST'])
 def remove():
-    link = request.form['link']
-
-    google_session = google_consent(link)
-    r = google_session.get(link)
-    id = extract_id(r.text)
+    id = request.form['id']
 
     channelsDB.delete_one({"_id":id})
     videosDB.delete_many({"channel":id})

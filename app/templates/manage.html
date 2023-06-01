@@ -19,15 +19,33 @@
                         </div>
                         <div class="row">
                             <div class="col-10">
-                            <input type="text" class="form-control" name="link" placeholder="LINK">
+                            <input type="text" class="form-control" name="search" placeholder="NAME">
                             </div>
                             <div class="col-2">
-                                <button type="submit" class="btn btn-primary">ADD</button>
+                                <button type="submit" class="btn btn-primary">SEARCH</button>
                             </div>
                         </div>  
                     </form>
                 </div>
             </div>
+            {% if result %}
+            <div class="row mt-5 justify-content-md-center">
+                {% for r in result['items'] %}
+                    <div class="col-xl-4 col-md-6 mt-5 position-relative">
+                        <div class="row">
+                            <div class="col-3">
+                                <img class="logoc-rad" src="{{ r['snippet']['thumbnails']['default']['url'] }}" width="103">
+                            </div> 
+                            <div class="col ms-4">
+                                <div class="channel-title fw-bold">{{ r['snippet']['title'] }}</div>
+                                <div>{{ r['snippet']['description'] }}</div>
+                            </div>
+                        </div>
+                        <a class="stretched-link" href="/add/{{ r['snippet']['channelId'] }}"></a>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="row mt-5 justify-content-md-center">
                 <div class="col-lg-8">
                     <form action="/remove" method="post">
@@ -38,7 +56,7 @@
                         </div>
                         <div class="row">
                             <div class="col-10">
-                            <input type="text" class="form-control" name="link" placeholder="LINK">
+                            <input type="text" class="form-control" name="id" placeholder="ID">
                             </div>
                             <div class="col-2">
                                 <button type="submit" class="btn btn-primary">REMOVE</button>
