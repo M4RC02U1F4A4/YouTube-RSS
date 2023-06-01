@@ -5,9 +5,9 @@ import sys
 
 url = sys.argv[1]
 
-with open("links.txt") as file:
-    links = [line.rstrip() for line in file]
+with open("ids.txt") as file:
+    ids = [line.rstrip() for line in file]
 
-for link in links:
-    r = requests.post(f"{url}/add", data={'link':link})
-    print(f"{link} - {r.status_code}")
+for id in ids:
+    r = requests.get(f"{url}/add/{id}")
+    print(f"{id} - {r.status_code}")
