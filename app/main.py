@@ -2,9 +2,7 @@ from flask import Flask, render_template, redirect, request
 import os
 import pymongo
 import requests
-import re
 from numerize import numerize
-import datetime
 
 MONGODB_USERNAME = os.getenv('MONGODB_USERNAME')
 MONGODB_PASSWORD = os.getenv('MONGODB_PASSWORD')
@@ -38,12 +36,19 @@ def get_subscriberCount(id):
 
 @app.template_filter('convert_time')
 def convert_time(time):
-    return str(datetime.timedelta(seconds=time))
+    return sec_to_str(time)
 
 @app.template_filter('beautify_time')
 def beautify_time(time):
     time = time.split(":")
     return f"{time[0]}h {time[1]}min {time[2]}sec"
+
+def sec_to_str(time):
+    h = int(time // 3600)
+    time = time - (h * 3600)
+    m = int(time // 60)
+    time = int(time - (m * 60))
+    return f"{str(h).zfill(2)}:{str(m).zfill(2)}:{str(time).zfill(2)}"
 
 def calc_len():
     videos_len = videosDB.count_documents({"viewed":0})
@@ -171,5 +176,5 @@ def remove():
     videosDB.delete_many({"channel":id})
     return redirect('/manage')
 
-
-# app.run(debug=True, port=5001, host='0.0.0.0')
+if __name__ == "__main__":
+    app.run(debug=True, port=5001, host='0.0.0.0')
