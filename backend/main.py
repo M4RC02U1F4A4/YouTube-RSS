@@ -7,6 +7,7 @@ import feedparser
 from datetime import datetime, timezone
 import isodate
 import logging
+from flask_cors import CORS
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.DEBUG)
 
@@ -25,6 +26,7 @@ randomDB = db['random']
 
 
 app = Flask(__name__)
+CORS(app)
 
 def last_update():
     try:
@@ -77,7 +79,8 @@ def get_videos_all():
 def get_channels():
     try:
         channels = channelsDB.find({}).sort('subscriberCount', -1)
-        return jsonify({'staus': 'OK', 'message': 'Channels list returned.', 'data': list(channels)})
+        result_dict = {channel['_id']: channel for channel in channels}
+        return jsonify({'staus': 'OK', 'message': 'Channels list returned.', 'data': result_dict})
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error getting channels.'})
 
