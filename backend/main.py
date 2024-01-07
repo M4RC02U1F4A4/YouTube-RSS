@@ -60,7 +60,7 @@ def unread(id):
 @app.route('/get/videos', methods = ['GET'])
 def get_videos():
     try:
-        videos = videosDB.find({"viewed":0}).sort('published', -1)
+        videos = videosDB.find({"viewed":0, "hidden":0}).sort('published', -1)
         return jsonify({'staus': 'OK', 'message': 'Videos list returned.', 'data': list(videos)})
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error getting videos.'})
