@@ -42,10 +42,7 @@ def time_to_watch():
     return total_time
 
 
-@app.route('/read/<id>')
-def read(id):
-    videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":1}})
-    return "OK", 200
+
 
 @app.route('/unread/<id>')
 def unread(id):
@@ -73,6 +70,16 @@ def get_videos_all():
         return jsonify({'staus': 'OK', 'message': 'Videos list returned.', 'data': list(videos)})
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error getting videos.'})
+
+
+@app.route('/read/video/<id>')
+def read_video(id):
+    try:
+        videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":1}})
+        return jsonify({'staus': 'OK', 'message': 'Video marked as watched.'}), 200
+    except:
+        return jsonify({'status': 'ERROR', 'message': 'Error.'})
+
 
 
 @app.route('/get/channels', methods = ['GET'])
