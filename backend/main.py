@@ -64,7 +64,7 @@ def get_videos():
 
 
 @app.route('/watch/video/<id>')
-def read_video(id):
+def watch_video(id):
     try:
         videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":1}})
         return jsonify({'staus': 'OK', 'message': 'Video marked as watched.'}), 200
@@ -73,7 +73,7 @@ def read_video(id):
     
 
 @app.route('/tbwatch/video/<id>')
-def read_video(id):
+def tbwatch_video(id):
     try:
         videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":0}})
         return jsonify({'staus': 'OK', 'message': 'Video marked as to be watched.'}), 200
