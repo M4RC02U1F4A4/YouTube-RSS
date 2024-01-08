@@ -63,11 +63,20 @@ def get_videos():
         return jsonify({'status': 'ERROR', 'message': 'Error getting videos.'})
 
 
-@app.route('/read/video/<id>')
+@app.route('/watch/video/<id>')
 def read_video(id):
     try:
         videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":1}})
         return jsonify({'staus': 'OK', 'message': 'Video marked as watched.'}), 200
+    except:
+        return jsonify({'status': 'ERROR', 'message': 'Error.'})
+    
+
+@app.route('/tbwatch/video/<id>')
+def read_video(id):
+    try:
+        videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":0}})
+        return jsonify({'staus': 'OK', 'message': 'Video marked as to be watched.'}), 200
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error.'})
 
