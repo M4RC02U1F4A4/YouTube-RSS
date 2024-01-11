@@ -120,8 +120,8 @@ def add_channel():
 def remove():
     if request.is_json:
         request_data = request.get_json()
-        channelsDB.delete_one({"_id": request_data['id']})
-        videosDB.delete_many({"channel": request_data['id']})
+        channelsDB.delete_one({"_id": request_data['channel_id']})
+        videosDB.delete_many({"channel": request_data['channel_id']})
         return jsonify({'status': 'OK', 'message': 'Channel removed.'})
     else:
         return jsonify({'status': 'ERROR', 'message': 'Channel not valid.'})
