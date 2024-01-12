@@ -1,9 +1,6 @@
 flask
 pymongo
 gunicorn
-numerize
 requests
-apscheduler
 feedparser
 isodate
-schedule
