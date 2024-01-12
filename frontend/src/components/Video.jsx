@@ -91,7 +91,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
         <Card className="w-[313px] h-[282px] border-none bg-transparent" shadow="none">
             <CardHeader className="pb-0 pt-2 px-4 flex-col items-start relative">
                 <div className="relative">
-                    <Image className="object-cover rounded-xl cursor-pointer" src={cardImageSrc} width={313} onClick={handleVideoLinkClick} />
+                    <Image className="object-cover rounded-xl cursor-pointer w-[281px] h-[158px]" src={cardImageSrc} onClick={handleVideoLinkClick} />
                     <div className="absolute bottom-0 right-0 p-2 z-10">
                         <p className="text-xs bg-black bg-opacity-85 text-white font-bold px-1 rounded">{formatDuration(videoDuration)}</p>
                     </div>
