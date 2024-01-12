@@ -130,7 +130,7 @@ def remove():
 @app.route('/search/<query>', methods = ['GET'])
 def search(query):
     logging.debug(f"Query: \"{query}\".")
-    result = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q={query}&type=channel&key={G_API_KEY}&maxResults=8").json()
+    result = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q={query}&type=channel&key={G_API_KEY}&maxResults=6").json()
     return jsonify({'status': "OK", 'message': f"Search result retuned.", 'data': result}), 200
 
 
