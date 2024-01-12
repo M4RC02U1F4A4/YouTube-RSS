@@ -4,3 +4,4 @@ gunicorn
 requests
 feedparser
 isodate
+flask-cors
