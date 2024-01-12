@@ -1,0 +1,52 @@
+name: New release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  backend-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-docker@v2
+      with:
+        dockerfile: backend/Dockerfile
+
+    - name: Build Docker Image
+      run: docker build -t ghcr.io/${{ github.repository_owner }}/ytrr-backend:latest -t ghcr.io/${{ github.repository_owner }}/ytrr-backend:${{ github.event.release.tag_name }} backend
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+    - name: Push Docker Image to GitHub Container Registry
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/ytrr-backend:latest
+        docker push ghcr.io/${{ github.repository_owner }}/ytrr-backend:${{ github.event.release.tag_name }}
+  
+  frontend-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-docker@v2
+      with:
+        dockerfile: frontend/Dockerfile
+
+    - name: Build Frontend Docker Image
+      run: docker build -t ghcr.io/${{ github.repository_owner }}/ytrr-frontend:latest -t ghcr.io/${{ github.repository_owner }}/ytrr-frontend:${{ github.event.release.tag_name }} frontend
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+    - name: Push Frontend Docker Image to GitHub Container Registry
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/ytrr-frontend:latest
+        docker push ghcr.io/${{ github.repository_owner }}/ytrr-frontend:${{ github.event.release.tag_name }}
