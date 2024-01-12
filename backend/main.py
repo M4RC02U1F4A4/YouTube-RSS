@@ -2,22 +2,18 @@ from flask import Flask, render_template, redirect, request, jsonify
 import os
 import pymongo
 import requests
-from numerize import numerize
 import feedparser
 from datetime import datetime, timezone
 import isodate
 import logging
 from flask_cors import CORS
 
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.INFO)
 
-# MONGODB_USERNAME = os.getenv('MONGODB_USERNAME')
-# MONGODB_PASSWORD = os.getenv('MONGODB_PASSWORD')
 MONGODB_HOST = os.getenv('MONGODB_HOST')
 MONGODB_PORT = os.getenv('MONGODB_PORT')
 G_API_KEY = os.getenv('G_API_KEY')
 
-# mongo_client = pymongo.MongoClient(f"mongodb://{MONGODB_USERNAME}:{MONGODB_PASSWORD}@{MONGODB_HOST}:{MONGODB_PORT}")
 mongo_client = pymongo.MongoClient(f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}")
 db = mongo_client.youtube
 channelsDB = db['channels']
@@ -40,16 +36,6 @@ def time_to_watch():
     for v in videos:
         total_time += v['duration']
     return total_time
-
-
-
-
-@app.route('/unread/<id>')
-def unread(id):
-    videosDB.update_one({"_id":f"{id}"}, {"$set": {"viewed":0}})
-    return redirect('/')
-
-
 
 # ----------------------------------------
 # Updated requests
@@ -139,7 +125,7 @@ def update_channels():
     try:
         channels = channelsDB.find({})
         for c in channels:
-            print(c)
+            logging.debug(c)
             result = requests.get(f"https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id={c['_id']}&key={G_API_KEY}").json()
             data = {
                 "title":f"{result['items'][0]['snippet']['title']}",
