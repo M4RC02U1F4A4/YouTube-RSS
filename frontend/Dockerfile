@@ -15,8 +15,7 @@ WORKDIR /react-app
 RUN npm install -g serve
 
 ENV BASE_URL_REPLACE="__REACT_APP_API_BASE_URL__"
-ENV NEW_BASE_URL="$REACT_APP_API_BASE_URL" 
 LABEL org.opencontainers.image.source=https://github.com/M4RC02U1F4A4/YouTube-RSS
 
-ENTRYPOINT ["find . -type f -exec sed -i "s/$BASE_URL_REPLACE/$NEW_BASE_URL/g" {} +"]
+ENTRYPOINT ["find . -type f -exec sed -i "s/$BASE_URL_REPLACE/$REACT_APP_API_BASE_URL/g" {} +"]
 CMD ["serve", "-l" , "3000"]
