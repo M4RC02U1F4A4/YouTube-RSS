@@ -22,7 +22,8 @@ services:
         apk --update add curl && \
         echo $${REACT_APP_API_BASE_URL} && \
         echo "0 0 */1 * * curl -X GET $${REACT_APP_API_BASE_URL}/update/channels" > /var/spool/cron/crontabs/root && \
-        echo "40 */1 * * * curl -X GET $${REACT_APP_API_BASE_URL}/update/videos" >> /var/spool/cron/crontabs/root && \
+        echo "0 */1 * * * curl -X GET $${REACT_APP_API_BASE_URL}/update/videos" >> /var/spool/cron/crontabs/root && \
+        echo "0 0 */1 * * curl -X GET $${REACT_APP_API_BASE_URL}/clean/videos" >> /var/spool/cron/crontabs/root && \
         crond -l 2 -f
     depends_on:
       - backend
