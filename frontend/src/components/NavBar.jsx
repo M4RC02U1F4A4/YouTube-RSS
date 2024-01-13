@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Input, Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
+import { useDataContext } from '../context/Data';
 import Channel from './Channel';
 import config from '../config';
 
@@ -9,6 +10,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const {channelsData} = useDataContext();
 
   const handleSearch = async () => {
     try {
@@ -70,7 +72,8 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                           channelName={channel.snippet.channelTitle}
                           channelDescription={channel.snippet.description}
                           channelID={channel.id.channelId}
-                          action="add"
+                          action={channelsData[channel.id.channelId] ? "remove" : "add"}
+                          stats="false"
                       />
                   ))}
                 </div>

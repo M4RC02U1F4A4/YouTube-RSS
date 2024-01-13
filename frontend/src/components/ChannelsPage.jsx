@@ -28,6 +28,7 @@ const Channels = () => {
                 channelID={channel._id}
                 channelViewCount={channel.viewCount}
                 action="remove"
+                stats="true"
             />
         ))}
     </div>

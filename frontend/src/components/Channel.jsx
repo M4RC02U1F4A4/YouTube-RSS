@@ -4,7 +4,7 @@ import HRNumbers from 'human-readable-numbers';
 import { useDataContext } from '../context/Data';
 import config from '../config';
 
-export default function Channel({ avatarSrc, channelName, channelDescription, channelSubscribers, channelVideoCount, channelID, channelViewCount, action }){     
+export default function Channel({ avatarSrc, channelName, channelDescription, channelSubscribers, channelVideoCount, channelID, channelViewCount, action, stats }){     
 
     const {isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
     const [backdrop, setBackdrop] = React.useState('opaque')
@@ -94,11 +94,11 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
           <p className="line-clamp-4">{channelDescription}</p>
         </CardBody>
           <CardFooter className="gap-3">
-          {action === "remove" ? (
+          {stats === "true" ? (
             <>
               <div className="flex gap-1">
                 <p className="font-semibold text-default-400 text-small">{HRNumbers.toHumanString(channelSubscribers)}</p>
-                <p className=" text-default-400 text-small">Subscribers</p>
+                <p className=" text-default-400 text-small">Subs</p>
               </div>
               <div className="flex gap-1">
                 <p className="font-semibold text-default-400 text-small">{HRNumbers.toHumanString(channelViewCount)}</p>

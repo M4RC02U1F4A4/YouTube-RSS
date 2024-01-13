@@ -106,13 +106,14 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
                         <Avatar src={avatarSrc} onClick={handleChannelLinkClick} size="md" className="w-[40px] cursor-pointer" />
                     </div>
                     <div className="flex flex-col gap-1 items-start justify-center">
-                        <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
-                        <a className="text-sm font-medium antialiased text-white-600 cursor-pointer" onClick={handleChannelLinkClick}>{`${channelName.substring(0, 21)}${channelName.length > 21 ? '...' : ''}`} - {HRNumbers.toHumanString(channelSubscribers)}</a>
-                        {viewed === 1 ? (
-                            <a className="uppercase text-sm font-bold antialiased text-green-600 hover:text-green-500 cursor-pointer" onClick={handleToViewLinkClick}>Mark as to be watched</a>
-                        ) : (
-                            <a className="uppercase text-sm font-bold antialiased text-red-600 hover:text-red-500 cursor-pointer" onClick={handleViewLinkClick}>Mark as watched</a>
-                        )}
+                      {viewed === 1 ? (
+                        <a className="uppercase text-sm font-bold antialiased text-green-600 hover:text-green-500 cursor-pointer" onClick={handleToViewLinkClick}>Mark as to be watched</a>
+                      ) : (
+                        <a className="uppercase text-sm font-bold antialiased text-red-600 hover:text-red-500 cursor-pointer" onClick={handleViewLinkClick}>Mark as watched</a>
+                      )}
+                      <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
+                      <a className="text-sm font-medium antialiased text-white-600 cursor-pointer line-clamp-1" onClick={handleChannelLinkClick}>{channelName}</a>
+                        
                     </div>
                 </div>
             </CardBody>
