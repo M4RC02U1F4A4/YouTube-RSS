@@ -24,4 +24,4 @@ To get started, you will need to create a Google Cloud account, create a project
     ```
     docker compose up -d
     ```
-4. You can now access the service on `http://127.0.0.1`
+4. You can now access the service on `http://127.0.0.1:8080`
