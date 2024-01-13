@@ -76,7 +76,7 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
             <Avatar className="cursor-pointer" isBordered radius="full" size="md" src={avatarSrc} onClick={handleChannelLinkClick}/>
             <div className="flex flex-col gap-1 items-start justify-center">
               <h4 className="text-small font-semibold leading-none text-default-600 line-clamp-1 cursor-pointer w-[160px]" onClick={handleChannelLinkClick}>{channelName}</h4>
-              <h5 className="text-[0.71rem] tracking-tight text-default-400 font-mono antialiased">{channelID}</h5>
+              <h5 className="text-[0.68rem] tracking-tight text-default-400 font-mono antialiased">{channelID}</h5>
             </div>
           </div>
           <div>
