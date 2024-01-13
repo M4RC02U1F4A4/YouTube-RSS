@@ -104,7 +104,7 @@ const SmallScreenNavbar = ({ activePage, handleNavLinkClick, onOpen }) => {
 
       <NavbarContent className="sm:hidden pr-3" justify="center">
         <NavbarBrand>
-          <p className="font-bold text-inherit">YouTube RSS</p>
+          <a className="font-bold text-inherit" href="/" >YouTube RSS</a>
         </NavbarBrand>
       </NavbarContent>
 
@@ -118,17 +118,17 @@ const SmallScreenNavbar = ({ activePage, handleNavLinkClick, onOpen }) => {
 
       <NavbarMenu className="dark text-foreground bg-background">
           <NavbarMenuItem>
-            <Link color={activePage === "home" ? "primary" : "foreground"} href="#" onClick={() => handleMenuItemClick("home")}>
+            <Link className="cursor-pointer" color={activePage === "home" ? "primary" : "foreground"} onClick={() => handleMenuItemClick("home")}>
               Home
             </Link>
           </NavbarMenuItem>
           <NavbarMenuItem>
-            <Link color={activePage === "channels" ? "primary" : "foreground"} href="#" onClick={() => handleMenuItemClick("channels")}>
+            <Link className="cursor-pointer" color={activePage === "channels" ? "primary" : "foreground"} onClick={() => handleMenuItemClick("channels")}>
             Channels
             </Link>
           </NavbarMenuItem>
           <NavbarMenuItem>
-            <Link color={activePage === "videos" ? "primary" : "foreground"} href="#" onClick={() => handleMenuItemClick("videos")}>
+            <Link className="cursor-pointer" color={activePage === "videos" ? "primary" : "foreground"} onClick={() => handleMenuItemClick("videos")}>
               Videos
             </Link>
           </NavbarMenuItem>
@@ -141,21 +141,21 @@ const LargeScreenNavbar = ({ activePage, handleNavLinkClick, onOpen }) => {
   return (
     <Navbar>
       <NavbarBrand>
-        <p className="font-bold text-inherit">YouTube RSS</p>
+        <a className="font-bold text-inherit" href="/" >YouTube RSS</a>
       </NavbarBrand>
       <NavbarContent className="sm:flex gap-4" justify="center">
         <NavbarItem isActive={activePage === "home"}>
-          <Link color={activePage === "home" ? "primary" : "foreground"} href="#" onClick={() => handleNavLinkClick("home")}>
+          <Link className="cursor-pointer" color={activePage === "home" ? "primary" : "foreground"} onClick={() => handleNavLinkClick("home")}>
             Home
           </Link>
         </NavbarItem>
         <NavbarItem isActive={activePage === "channels"}>
-          <Link color={activePage === "channels" ? "primary" : "foreground"} href="#" onClick={() => handleNavLinkClick("channels")}>
+          <Link className="cursor-pointer" color={activePage === "channels" ? "primary" : "foreground"} onClick={() => handleNavLinkClick("channels")}>
             Channels
           </Link>
         </NavbarItem>
         <NavbarItem isActive={activePage === "videos"}>
-          <Link color={activePage === "videos" ? "primary" : "foreground"} href="#" onClick={() => handleNavLinkClick("videos")}>
+          <Link className="cursor-pointer" color={activePage === "videos" ? "primary" : "foreground"} onClick={() => handleNavLinkClick("videos")}>
             Videos
           </Link>
         </NavbarItem>
