@@ -9,6 +9,7 @@ const Channels = () => {
     useEffect(() => {
         if (Object.keys(channelsData).length > 0) {
         setLoading(false); 
+        console.log(channelsData)
         }
     }, [channelsData]);
 
@@ -18,7 +19,7 @@ const Channels = () => {
 
   return (
     <div className="channel-grid">
-        {Object.values(channelsData).map((channel, index) => (
+        {Object.values(channelsData).sort((a, b) => b.subscriberCount - a.subscriberCount).map((channel, index) => (
             <Channel key={index}
                 avatarSrc={channel.logo}
                 channelName={channel.title}

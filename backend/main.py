@@ -71,7 +71,7 @@ def tbwatch_video(id):
 @app.route('/get/channels', methods = ['GET'])
 def get_channels():
     try:
-        channels = channelsDB.find({}).sort('subscriberCount', -1)
+        channels = channelsDB.find({})
         result_dict = {channel['_id']: channel for channel in channels}
         return jsonify({'staus': 'OK', 'message': 'Channels list returned.', 'data': result_dict})
     except:
