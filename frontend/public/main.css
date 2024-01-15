@@ -2530,12 +2530,12 @@ video {
   font-size: 0.5rem;
 }
 
-.text-\[0\.6rem\] {
-  font-size: 0.6rem;
+.text-\[0\.68rem\] {
+  font-size: 0.68rem;
 }
 
-.text-\[0\.71rem\] {
-  font-size: 0.71rem;
+.text-\[0\.6rem\] {
+  font-size: 0.6rem;
 }
 
 .text-base {
@@ -2576,14 +2576,6 @@ video {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-
-.text-\[0\.69rem\] {
-  font-size: 0.69rem;
-}
-
-.text-\[0\.68rem\] {
-  font-size: 0.68rem;
 }
 
 .font-bold {

@@ -112,7 +112,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
                         <a className="uppercase text-sm font-bold antialiased text-red-600 hover:text-red-500 cursor-pointer" onClick={handleViewLinkClick}>Mark as watched</a>
                       )}
                       <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
-                      <a className="text-sm font-medium antialiased text-white-600 cursor-pointer line-clamp-1" onClick={handleChannelLinkClick}>{channelName}</a>
+                      <a className="text-xs font-medium antialiased text-white-600 cursor-pointer line-clamp-1" onClick={handleChannelLinkClick}>{channelName}</a>
                         
                     </div>
                 </div>
