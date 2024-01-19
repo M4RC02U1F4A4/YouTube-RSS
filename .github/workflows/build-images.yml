@@ -1,0 +1,48 @@
+name: New release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  backend-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker Image
+      run: docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u m4rc02u1f4a4 --password-stdin
+
+    - name: Push Docker Image to GitHub Container Registry
+      run: |
+        docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:latest
+        docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
+  
+  frontend-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Frontend Docker Image
+      run: docker build -f frontend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }} frontend
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u m4rc02u1f4a4 --password-stdin
+
+    - name: Push Frontend Docker Image to GitHub Container Registry
+      run: |
+        docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:latest
+        docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }}
