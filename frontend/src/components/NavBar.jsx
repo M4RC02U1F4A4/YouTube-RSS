@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Divider, Input, Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
 import { useDataContext } from '../context/Data';
 import Channel from './Channel';
 import config from '../config';
@@ -10,7 +10,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const {channelsData} = useDataContext();
+  const {channelsData, statsData, fetchStatsData} = useDataContext();
 
   const handleSearch = async () => {
     try {
@@ -26,6 +26,26 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
       console.error('Errore nella richiesta:', error);
     }
   };
+
+  const handleForceUpdateChannels = async () => {
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/update/channels`);
+      console.log(response)
+      fetchStatsData()
+    } catch (error) {
+      console.error('Errore nella richiesta:', error);
+    }
+  }
+
+  const handleForceUpdateVideos = async () => {
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/update/videos`);
+      console.log(response)
+      fetchStatsData()
+    } catch (error) {
+      console.error('Errore nella richiesta:', error);
+    }
+  }
 
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
@@ -59,7 +79,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Manage - Add new channel</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Add new channel</ModalHeader>
               <ModalBody>
                 <div className="flex items-center">
                   <Input className="flex-1" type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => handleKeyPress(e)} label="Query" />  
@@ -77,7 +97,55 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                       />
                   ))}
                 </div>
-                
+                <Divider className="my-4" />
+                <div>
+                  <p className="font-semibold text-lg">Stats and info</p>
+                </div>
+                <div>
+                <Table hideHeader isStriped aria-label="Example static collection table">
+                  <TableHeader>
+                    <TableColumn>NAME</TableColumn>
+                    <TableColumn>VALUE</TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow key="1">
+                      <TableCell>Last videos update</TableCell>
+                      <TableCell>{statsData.last_videos_update}</TableCell>
+                    </TableRow>
+                    <TableRow key="2">
+                      <TableCell>Last channels update</TableCell>
+                      <TableCell>{statsData.last_channels_update}</TableCell>
+                    </TableRow>
+                    <TableRow key="3">
+                      <TableCell>Number of channels</TableCell>
+                      <TableCell>{statsData.n_of_channels}</TableCell>
+                    </TableRow>
+                    <TableRow key="4">
+                      <TableCell>Number of videos</TableCell>
+                      <TableCell>{statsData.n_of_videos}</TableCell>
+                    </TableRow>
+                    <TableRow key="5">
+                      <TableCell>Videos to watch</TableCell>
+                      <TableCell>{statsData.n_of_videos_to_watch}</TableCell>
+                    </TableRow>
+                    <TableRow key="6">
+                      <TableCell>Duration of videos to watch</TableCell>
+                      <TableCell>{statsData.time_to_watch}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+                </div>
+                <Divider className="my-4" />
+                <div>
+                  <p className="font-semibold text-lg">Danger Zone</p>
+                </div>
+                <div>
+                  <Button className="antialiased font-semibold" color="danger" variant="ghost" onClick={handleForceUpdateChannels}> Force channels update </Button>
+                  <Button className="antialiased font-semibold ml-4" color="danger" variant="ghost" onClick={handleForceUpdateVideos}> Force videos update </Button>
+                </div>
+                <div>
+                  <p className="text-[0.80rem] tracking-tight text-default-400 font-mono antialiased">If you refresh manually too frequently, you risk running out of the daily API call limit for YouTube Data API v3.</p>
+                </div>
               </ModalBody>
               <ModalFooter>
               </ModalFooter>
