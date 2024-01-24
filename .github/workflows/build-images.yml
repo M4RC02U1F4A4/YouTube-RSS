@@ -16,15 +16,24 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build Docker Image
-      run: docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
+      run: |
+        if [[ "${{ github.event.release.tag_name }}" != *"beta"* ]]; then
+        docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
+        else
+        docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
+        fi
 
     - name: Log in to GitHub Container Registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u m4rc02u1f4a4 --password-stdin
 
     - name: Push Docker Image to GitHub Container Registry
       run: |
-        docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:latest
-        docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
+        if [[ "${{ github.event.release.tag_name }}" != *"beta"* ]]; then
+          docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:latest
+          docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
+        else
+          docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
+        fi
   
   frontend-build-and-push:
     runs-on: ubuntu-latest
