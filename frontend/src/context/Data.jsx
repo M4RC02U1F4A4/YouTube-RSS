@@ -8,6 +8,7 @@ export const useDataContext = () => useContext(DataContext);
 export const DataProvider = ({ children }) => {
     const [videosData, setVideosData] = useState({});
     const [channelsData, setChannelsData] = useState({});
+    const [statsData, setStatsData] = useState({});
 
     const fetchVideosData = async () => {
         try {
@@ -29,13 +30,24 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const fetchStatsData = async () => {
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/stats`); 
+            const statsData = await response.json();
+            setStatsData(statsData.data);
+        } catch (error) {
+            console.error('Errore nella richiesta API per i canali:', error);
+        }
+    };
+
     useEffect(() => {
         fetchVideosData(); 
         fetchChannelsData(); 
+        fetchStatsData();
     }, []);
 
     return (
-        <DataContext.Provider value={{ videosData, setVideosData, channelsData, setChannelsData, fetchVideosData, fetchChannelsData }}>
+        <DataContext.Provider value={{ videosData, setVideosData, channelsData, setChannelsData, fetchVideosData, fetchChannelsData, statsData, fetchStatsData }}>
             {children}
         </DataContext.Provider>
     );

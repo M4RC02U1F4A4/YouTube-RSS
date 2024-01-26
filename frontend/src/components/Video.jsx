@@ -2,7 +2,6 @@ import React from "react";
 import {Card, CardHeader, CardBody, Image} from "@nextui-org/react";
 import {Avatar} from "@nextui-org/react";
 import moment from 'moment';
-import HRNumbers from 'human-readable-numbers';
 import { useDataContext } from '../context/Data';
 import config from '../config';
 
@@ -32,7 +31,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
         }
     };
 
-    const { fetchVideosData } = useDataContext();
+    const { fetchVideosData, fetchStatsData } = useDataContext();
 
     const handleVideoLinkClick = (event) => {
         event.preventDefault();
@@ -44,6 +43,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
             .then(data => {
                 console.log(data);
                 fetchVideosData();
+                fetchStatsData();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -64,6 +64,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
           .then(data => {
             console.log(data);
             fetchVideosData();
+            fetchStatsData();
           })
           .catch(error => {
             console.error('Error:', error);
@@ -80,6 +81,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
           .then(data => {
             console.log(data);
             fetchVideosData();
+            fetchStatsData();
           })
           .catch(error => {
             console.error('Error:', error);

@@ -24,18 +24,12 @@ randomDB = db['random']
 app = Flask(__name__)
 CORS(app)
 
-def last_update():
-    try:
-        return randomDB.find_one({"_id":"last_update"})['time']
-    except:
-        return 'NA'
-    
 def time_to_watch():
     total_time = 0
     videos = videosDB.find({"viewed":0})
     for v in videos:
         total_time += v['duration']
-    return total_time
+    return int(total_time)
 
 # ----------------------------------------
 # Updated requests
@@ -137,6 +131,10 @@ def update_channels():
                 "subscriberCount":int(f"{result['items'][0]['statistics']['subscriberCount']}"),
             }
             channelsDB.update_one({"_id":f"{c['_id']}"}, {"$set": data})
+        try:
+            randomDB.insert_one({"_id":"last_channels_update", "time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"})
+        except:
+            randomDB.update_one({"_id":"last_channels_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"}})
         return jsonify({'status': 'OK', 'message': 'Successful update.'})
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error during update.'})
@@ -180,9 +178,9 @@ def update_videos():
                         "hidden": hidden
                     })
                 try:
-                    randomDB.insert_one({"_id":"last_update", "time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"})
+                    randomDB.insert_one({"_id":"last_videos_update", "time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"})
                 except:
-                    randomDB.update_one({"_id":"last_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"}})
+                    randomDB.update_one({"_id":"last_videos_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"}})
             except Exception as e:
                 logging.debug(e)
     return jsonify({'status': 'OK', 'message': 'Successful update.'})
@@ -198,6 +196,22 @@ def clean_videos():
         return jsonify({'status': 'OK', 'message': "Clean succesfull."})
     except:
         return jsonify({'status': 'OK', 'message': 'Error during video cleaning.'})
+    
+
+@app.route('/stats', methods = ['GET'])
+def stats():
+    try:
+        return jsonify({'status': 'OK', 'message': "Stats returned.", "data":{
+            "last_videos_update": randomDB.find_one({"_id":"last_videos_update"})['time'],
+            "last_channels_update": randomDB.find_one({"_id":"last_channels_update"})['time'],
+            "n_of_videos": videosDB.count_documents({}),
+            "n_of_channels": channelsDB.count_documents({}),
+            "n_of_videos_to_watch": videosDB.count_documents({"viewed":0}),
+            "time_to_watch": time_to_watch()
+            }})
+    except:
+        return jsonify({'status': 'OK', 'message': 'Error getting stats.'})
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001, host='0.0.0.0')

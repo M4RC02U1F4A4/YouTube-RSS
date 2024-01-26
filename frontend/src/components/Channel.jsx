@@ -9,7 +9,7 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
     const {isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
     const [backdrop, setBackdrop] = React.useState('opaque')
 
-    const { fetchChannelsData } = useDataContext();
+    const { fetchChannelsData, fetchStatsData, fetchVideosData } = useDataContext();
 
     const handleOpen = (backdrop) => {
         setBackdrop(backdrop)
@@ -34,6 +34,8 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
                 console.log('Risposta:', data);
                 fetchChannelsData();
                 onClose();
+                fetchStatsData();
+                fetchVideosData();
           })
           .catch(error => {
                 console.error('Error:', error);
@@ -58,6 +60,8 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
               console.log('Risposta:', data);
               fetchChannelsData();
               onClose();
+              fetchStatsData();
+              fetchVideosData();
         })
         .catch(error => {
               console.error('Error:', error);
