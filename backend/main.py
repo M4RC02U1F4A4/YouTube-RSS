@@ -132,9 +132,9 @@ def update_channels():
             }
             channelsDB.update_one({"_id":f"{c['_id']}"}, {"$set": data})
         try:
-            randomDB.insert_one({"_id":"last_channels_update", "time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"})
+            randomDB.insert_one({"_id":"last_channels_update", "time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"})
         except:
-            randomDB.update_one({"_id":"last_channels_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"}})
+            randomDB.update_one({"_id":"last_channels_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"}})
         return jsonify({'status': 'OK', 'message': 'Successful update.'})
     except:
         return jsonify({'status': 'ERROR', 'message': 'Error during update.'})
@@ -178,9 +178,9 @@ def update_videos():
                         "hidden": hidden
                     })
                 try:
-                    randomDB.insert_one({"_id":"last_videos_update", "time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"})
+                    randomDB.insert_one({"_id":"last_videos_update", "time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"})
                 except:
-                    randomDB.update_one({"_id":"last_videos_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%y %H:%M')}"}})
+                    randomDB.update_one({"_id":"last_videos_update"},{"$set":{"time":f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"}})
             except Exception as e:
                 logging.debug(e)
     return jsonify({'status': 'OK', 'message': 'Successful update.'})

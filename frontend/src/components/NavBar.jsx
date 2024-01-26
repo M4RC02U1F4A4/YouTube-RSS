@@ -12,6 +12,20 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
   const [searchResults, setSearchResults] = useState([]);
   const {channelsData, statsData, fetchStatsData} = useDataContext();
 
+  const convertiSecondi = (secondi) => {
+    const days = Math.floor(secondi / (3600 * 24));
+    const hour = Math.floor((secondi % (3600 * 24)) / 3600);
+    const minutes = Math.floor((secondi % 3600) / 60);
+
+    const daysString = days > 0 ? `${days}d` : '';
+    const hourString = hour > 0 ? `${hour}h` : '';
+    const minutesString = minutes > 0 ? `${minutes}m` : '';
+
+    const risultato = [daysString, hourString, minutesString].filter(Boolean).join(':');
+
+    return risultato || 'NA';
+  };
+
   const handleSearch = async () => {
     try {
       const response = await fetch(`${config.API_BASE_URL}/search/${searchTerm}`);
@@ -102,7 +116,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                   <p className="font-semibold text-lg">Stats and info</p>
                 </div>
                 <div>
-                <Table hideHeader isStriped aria-label="Example static collection table">
+                <Table hideHeader isStriped>
                   <TableHeader>
                     <TableColumn>NAME</TableColumn>
                     <TableColumn>VALUE</TableColumn>
@@ -110,11 +124,11 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                   <TableBody>
                     <TableRow key="1">
                       <TableCell>Last videos update</TableCell>
-                      <TableCell>{statsData.last_videos_update}</TableCell>
+                      <TableCell><p>{statsData.last_videos_update} UTC</p></TableCell>
                     </TableRow>
                     <TableRow key="2">
                       <TableCell>Last channels update</TableCell>
-                      <TableCell>{statsData.last_channels_update}</TableCell>
+                      <TableCell><p>{statsData.last_channels_update} UTC</p></TableCell>
                     </TableRow>
                     <TableRow key="3">
                       <TableCell>Number of channels</TableCell>
@@ -130,7 +144,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                     </TableRow>
                     <TableRow key="6">
                       <TableCell>Duration of videos to watch</TableCell>
-                      <TableCell>{statsData.time_to_watch}</TableCell>
+                      <TableCell>{convertiSecondi(statsData.time_to_watch)}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -140,8 +154,8 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                   <p className="font-semibold text-lg">Danger Zone</p>
                 </div>
                 <div>
-                  <Button className="antialiased font-semibold" color="danger" variant="ghost" onClick={handleForceUpdateChannels}> Force channels update </Button>
-                  <Button className="antialiased font-semibold ml-4" color="danger" variant="ghost" onClick={handleForceUpdateVideos}> Force videos update </Button>
+                  <Button className="antialiased font-semibold mr-4 mt-1" color="danger" variant="ghost" onClick={handleForceUpdateChannels}> Force channels update </Button>
+                  <Button className="antialiased font-semibold mt-1" color="danger" variant="ghost" onClick={handleForceUpdateVideos}> Force videos update </Button>
                 </div>
                 <div>
                   <p className="text-[0.80rem] tracking-tight text-default-400 font-mono antialiased">If you refresh manually too frequently, you risk running out of the daily API call limit for YouTube Data API v3.</p>
