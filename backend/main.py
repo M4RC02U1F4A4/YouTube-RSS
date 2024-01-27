@@ -206,7 +206,7 @@ def stats():
             "last_channels_update": randomDB.find_one({"_id":"last_channels_update"})['time'],
             "n_of_videos": videosDB.count_documents({}),
             "n_of_channels": channelsDB.count_documents({}),
-            "n_of_videos_to_watch": videosDB.count_documents({"viewed":0}),
+            "n_of_videos_to_watch": videosDB.count_documents({"viewed":0, "hidden":0}),
             "time_to_watch": time_to_watch()
             }})
     except:
