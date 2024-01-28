@@ -3,13 +3,15 @@ import {Card, CardHeader, CardBody, CardFooter, Avatar, Button, Modal, ModalCont
 import HRNumbers from 'human-readable-numbers';
 import { useDataContext } from '../context/Data';
 import config from '../config';
+import ChannelModal from './ChannelModal'
 
 export default function Channel({ avatarSrc, channelName, channelDescription, channelSubscribers, channelVideoCount, channelID, channelViewCount, action, stats }){     
 
     const {isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+    const { isOpen: isChannelModalOpen, onOpen: onChannelModalOpen, onClose: onChannelModalClose } = useDisclosure();
     const [backdrop, setBackdrop] = React.useState('opaque')
 
-    const { fetchChannelsData, fetchStatsData, fetchVideosData } = useDataContext();
+    const { fetchChannelsData, fetchStatsData, fetchVideosData, videosData, channelsData } = useDataContext();
 
     const handleOpen = (backdrop) => {
         setBackdrop(backdrop)
@@ -70,17 +72,21 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
 
     const handleChannelLinkClick = () => {
       window.open(`https://www.youtube.com/channel/${channelID}`, '_blank');
-  };
+    };
+
+    const handleChannelLinkClickForModal = () => {
+      onChannelModalOpen();
+    };
 
     return(
         <>
         <Card className="w-[313px] h-[188px]">
         <CardHeader className="justify-between">
           <div className="flex gap-5">
-            <Avatar className="cursor-pointer" isBordered radius="full" size="md" src={avatarSrc} onClick={handleChannelLinkClick}/>
+            <Avatar className="cursor-pointer" isBordered radius="full" size="md" src={avatarSrc} onClick={handleChannelLinkClickForModal}/>
             <div className="flex flex-col gap-1 items-start justify-center">
-              <h4 className="text-small font-semibold leading-none text-default-600 line-clamp-1 cursor-pointer w-[160px]" onClick={handleChannelLinkClick}>{channelName}</h4>
-              <h5 className="text-[0.68rem] tracking-tight text-default-400 font-mono antialiased">{channelID}</h5>
+              <h4 className="text-small font-semibold leading-none text-default-600 line-clamp-1 cursor-pointer w-[160px]" onClick={handleChannelLinkClickForModal}>{channelName}</h4>
+              <h5 className="text-[0.68rem] tracking-tight text-default-400 font-mono antialiased cursor-pointer" onClick={handleChannelLinkClick}>{channelID}</h5>
             </div>
           </div>
           <div>
@@ -137,6 +143,15 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
                   No
                 </Button>
               </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={isChannelModalOpen} scrollBehavior='inside' onOpenChange={onChannelModalClose} size="4xl" className="dark text-foreground bg-background" backdrop="blur" hideCloseButton>
+        <ModalContent>
+          {(onChannelModalClose) => (
+            <>
+              <ChannelModal channelID={channelID} channelName={channelName}/>
             </>
           )}
         </ModalContent>
