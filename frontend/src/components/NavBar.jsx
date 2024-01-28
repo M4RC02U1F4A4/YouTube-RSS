@@ -10,7 +10,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const {channelsData, statsData, fetchStatsData} = useDataContext();
+  const {channelsData, statsData, fetchStatsData, fetchVideosData, fetchChannelsData} = useDataContext();
 
   const convertiSecondi = (secondi) => {
     const days = Math.floor(secondi / (3600 * 24));
@@ -46,6 +46,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
       const response = await fetch(`${config.API_BASE_URL}/update/channels`);
       console.log(response)
       fetchStatsData()
+      fetchChannelsData()
     } catch (error) {
       console.error('Errore nella richiesta:', error);
     }
@@ -56,6 +57,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
       const response = await fetch(`${config.API_BASE_URL}/update/videos`);
       console.log(response)
       fetchStatsData()
+      fetchVideosData()
     } catch (error) {
       console.error('Errore nella richiesta:', error);
     }
