@@ -110,7 +110,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
                     </div>
                 </div>
             </CardHeader>
-            <CardBody className="overflow-visible py-2 w-[281px] mt-1">
+            <CardBody className="overflow-visible py-2 px-4 w-[281px] mt-1">
                 <div className="flex gap-5">
                       <div>
                           <Avatar src={avatarSrc} onClick={handleChannelLinkClickForModal} size="md" className="w-[40px] cursor-pointer" />
@@ -137,7 +137,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
             </Modal>
         </Card>
         ) : (
-          <Card className="w-[313px] h-[232px] border-none bg-transparent" shadow="none">
+          <Card className="w-[313px] h-[222px] border-none bg-transparent" shadow="none">
             <CardHeader className="pb-0 pt-2 px-4 flex-col items-start relative">
                 <div className="relative">
                     <Image className="object-cover rounded-xl cursor-pointer w-[281px] h-[158px]" src={cardImageSrc} onClick={handleVideoLinkClickNoView} />
@@ -156,7 +156,7 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
                     )}
                 </div>
             </CardHeader>
-            <CardBody className="overflow-visible py-2 w-[281px] mt-1">
+            <CardBody className="overflow-visible py-2 px-4 w-[313px] mt-1">
                   <div className="flex gap-5">
                         <>
                           <div className="flex flex-col gap-1 items-start justify-center">
