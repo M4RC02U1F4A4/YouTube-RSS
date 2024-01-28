@@ -20,7 +20,7 @@ jobs:
         if [[ "${{ github.event.release.tag_name }}" != *"beta"* ]]; then
           docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
         else
-          docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
+        docker build -f backend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-backend:beta -t ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }} backend
         fi
 
     - name: Log in to GitHub Container Registry
@@ -32,6 +32,7 @@ jobs:
           docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:latest
           docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
         else
+          docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:beta
           docker push ghcr.io/m4rc02u1f4a4/ytrss-backend:${{ github.event.release.tag_name }}
         fi
   
@@ -50,7 +51,7 @@ jobs:
         if [[ "${{ github.event.release.tag_name }}" != *"beta"* ]]; then
           docker build -f frontend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:latest -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }} frontend
         else
-          docker build -f frontend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }} frontend
+        docker build -f frontend/Dockerfile -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:beta -t ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }} frontend
         fi
 
     - name: Log in to GitHub Container Registry
@@ -62,5 +63,6 @@ jobs:
           docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:latest
           docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }}
         else
+          docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:beta
           docker push ghcr.io/m4rc02u1f4a4/ytrss-frontend:${{ github.event.release.tag_name }}
         fi
