@@ -12,24 +12,28 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
     };
 
     const getTimeAgoString = (dateString) => {
-        const currentDate = moment();
-        const inputDate = moment(dateString);
-      
-        const diffInHours = currentDate.diff(inputDate, 'hours');
-        const diffInDays = currentDate.diff(inputDate, 'days');
-        const diffInMonths = currentDate.diff(inputDate, 'months');
-        const diffInYears = currentDate.diff(inputDate, 'years');
-      
-        if (diffInHours < 24) {
+      const currentDate = moment();
+      const inputDate = moment(dateString);
+  
+      const diffInMinutes = currentDate.diff(inputDate, 'minutes');
+      const diffInHours = currentDate.diff(inputDate, 'hours');
+      const diffInDays = currentDate.diff(inputDate, 'days');
+      const diffInMonths = currentDate.diff(inputDate, 'months');
+      const diffInYears = currentDate.diff(inputDate, 'years');
+  
+      if (diffInMinutes < 60) {
+          return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+      } else if (diffInHours < 24) {
           return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
-        } else if (diffInDays < 30) {
+      } else if (diffInDays < 30) {
           return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
-        } else if (diffInMonths < 12) {
+      } else if (diffInMonths < 12) {
           return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
-        } else {
+      } else {
           return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
-        }
+      }
     };
+  
 
     const { fetchVideosData, fetchStatsData } = useDataContext();
 
