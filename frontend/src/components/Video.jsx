@@ -91,11 +91,13 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
       onChannelModalOpen();
     };
 
-    const handleChannelLinkClick = () => {
-      window.open(`https://www.youtube.com/channel/${channelID}`, '_blank');
+    const handleVideoLinkClickNoView = () => {
+      window.open(`https://www.youtube.com/watch?v=${videoID}`, '_blank');
     };
 
     return(
+      <>
+      {modal ? (
         <Card className="w-[313px] h-[282px] border-none bg-transparent" shadow="none">
             <CardHeader className="pb-0 pt-2 px-4 flex-col items-start relative">
                 <div className="relative">
@@ -110,8 +112,6 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
             </CardHeader>
             <CardBody className="overflow-visible py-2 w-[281px] mt-1">
                 <div className="flex gap-5">
-                  {modal ? (
-                    <>
                       <div>
                           <Avatar src={avatarSrc} onClick={handleChannelLinkClickForModal} size="md" className="w-[40px] cursor-pointer" />
                       </div>
@@ -124,38 +124,6 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
                         <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
                         <a className="text-xs font-medium antialiased text-white-600 cursor-pointer line-clamp-1" onClick={handleChannelLinkClickForModal}>{channelName}</a>
                       </div>
-                    </>
-                    ) : (
-                      <>
-                        {home ? (
-                          <>
-                            <div>
-                              <Avatar src={avatarSrc} onClick={handleChannelLinkClick} size="md" className="w-[40px] cursor-pointer" />
-                            </div>
-                            <div className="flex flex-col gap-1 items-start justify-center">
-                              {viewed === 1 ? (
-                                <a className="uppercase text-sm font-bold antialiased text-green-600 hover:text-green-500 cursor-pointer" onClick={handleToViewLinkClick}>Mark as to be watched</a>
-                              ) : (
-                                <a className="uppercase text-sm font-bold antialiased text-red-600 hover:text-red-500 cursor-pointer" onClick={handleViewLinkClick}>Mark as watched</a>
-                              )}
-                              <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
-                              <a className="text-xs font-medium antialiased text-white-600 cursor-pointer line-clamp-1" onClick={handleChannelLinkClick}>{channelName}</a>
-                            </div>
-                          </>
-                        ):(
-                          <>
-                          <div className="flex flex-col gap-1 items-start justify-center">
-                            {viewed === 1 ? (
-                              <a className="uppercase text-sm font-bold antialiased text-green-600 hover:text-green-500 cursor-pointer" onClick={handleToViewLinkClick}>Mark as to be watched</a>
-                            ) : (
-                              <a className="uppercase text-sm font-bold antialiased text-red-600 hover:text-red-500 cursor-pointer" onClick={handleViewLinkClick}>Mark as watched</a>
-                            )}
-                            <a className="text-base font-semibold antialiased text-sky-500 line-clamp-4 cursor-pointer" onClick={handleVideoLinkClick} >{videoTitle}</a>
-                          </div>
-                        </>
-                        )}
-                      </>
-                    )}
                 </div>
             </CardBody>
             <Modal isOpen={isChannelModalOpen} scrollBehavior='inside' onOpenChange={onChannelModalClose} size="4xl" className="dark text-foreground bg-background" backdrop="blur" hideCloseButton>
@@ -168,5 +136,49 @@ export default function Video({ cardImageSrc, avatarSrc, videoTitle, channelName
               </ModalContent>
             </Modal>
         </Card>
+        ) : (
+          <Card className="w-[313px] h-[232px] border-none bg-transparent" shadow="none">
+            <CardHeader className="pb-0 pt-2 px-4 flex-col items-start relative">
+                <div className="relative">
+                    <Image className="object-cover rounded-xl cursor-pointer w-[281px] h-[158px]" src={cardImageSrc} onClick={handleVideoLinkClickNoView} />
+                    <div className="absolute bottom-0 right-0 p-2 z-10">
+                        <p className="text-xs bg-black bg-opacity-85 text-white font-bold px-1 rounded">{formatDuration(videoDuration)}</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 p-2 z-10">
+                        <p className="text-xs bg-black bg-opacity-85 text-white font-bold px-1 rounded">{getTimeAgoString(videoPublished)}</p>
+                    </div>
+                    {viewed === 1 ? (
+                      <div className="absolute top-0 right-0 p-2 z-10">
+                        <p className="text-xs bg-black bg-opacity-85 text-white font-bold px-1 rounded">Watched</p>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
+                </div>
+            </CardHeader>
+            <CardBody className="overflow-visible py-2 w-[281px] mt-1">
+                  <div className="flex gap-5">
+                        <>
+                          <div className="flex flex-col gap-1 items-start justify-center">
+                            <a className="text-base font-semibold antialiased text-sky-500 line-clamp-2 cursor-pointer" onClick={handleVideoLinkClickNoView} >{videoTitle}</a>
+                          </div>
+                        </>
+                      
+                  </div>
+              </CardBody>
+            <Modal isOpen={isChannelModalOpen} scrollBehavior='inside' onOpenChange={onChannelModalClose} size="4xl" className="dark text-foreground bg-background" backdrop="blur" hideCloseButton>
+              <ModalContent>
+                {(onChannelModalClose) => (
+                  <>
+                    <ChannelModal channelID={channelID} channelName={channelName}/>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+        </Card>
+        )}
+        </>
     )
 }
+
+
