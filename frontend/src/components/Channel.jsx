@@ -3,7 +3,7 @@ import {Card, CardHeader, CardBody, CardFooter, Avatar, Button, Modal, ModalCont
 import HRNumbers from 'human-readable-numbers';
 import { useDataContext } from '../context/Data';
 import config from '../config';
-import Video from './Video'
+import ChannelModal from './ChannelModal'
 
 export default function Channel({ avatarSrc, channelName, channelDescription, channelSubscribers, channelVideoCount, channelID, channelViewCount, action, stats }){     
 
@@ -149,32 +149,9 @@ export default function Channel({ avatarSrc, channelName, channelDescription, ch
       </Modal>
       <Modal isOpen={isChannelModalOpen} scrollBehavior='inside' onOpenChange={onChannelModalClose} size="4xl" className="dark text-foreground bg-background" backdrop="blur" hideCloseButton>
         <ModalContent>
-          {(onClose) => (
+          {(onChannelModalClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">{channelName}</ModalHeader>
-              <ModalBody>
-                <div>
-                  
-                </div>
-                <div className="video-grid">
-                  {videosData.filter((video) => video.channel === channelID).map((video, index) => (
-                      <Video key={index}
-                          cardImageSrc={video.thumbnail}
-                          avatarSrc={channelsData[video.channel].logo}
-                          videoTitle={video.title}
-                          videoDuration={video.duration}
-                          channelName={channelsData[video.channel].title}
-                          channelSubscribers={channelsData[video.channel].subscriberCount}
-                          videoPublished={video.published}
-                          videoID={video._id}
-                          channelID={video.channel}
-                          viewed={video.viewed}
-                      />
-                  ))}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-              </ModalFooter>
+              <ChannelModal channelID={channelID} channelName={channelName}/>
             </>
           )}
         </ModalContent>

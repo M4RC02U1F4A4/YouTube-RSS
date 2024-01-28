@@ -30,6 +30,7 @@ const Videos = () => {
               videoID={video._id}
               channelID={video.channel}
               viewed={video.viewed}
+              modal={true}
           />
       ))}
     </div>
