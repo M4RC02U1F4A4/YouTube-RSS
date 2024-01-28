@@ -22,7 +22,7 @@ export default function ChannelModal({ channelID, channelName }){
                         <h5 className="text-[0.85rem] tracking-tight text-default-400 font-mono antialiased" >{channelID}</h5>
                     </div>
                 </div>
-                <div className="video-grid">
+                <div className="video-grid mt-3">
                   {videosData.filter((video) => video.channel === channelID).map((video, index) => (
                       <Video key={index}
                           cardImageSrc={video.thumbnail}
