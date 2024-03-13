@@ -126,27 +126,27 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                   <TableBody>
                     <TableRow key="1">
                       <TableCell>Last videos update</TableCell>
-                      <TableCell><p>{statsData.last_videos_update} UTC</p></TableCell>
+                      <TableCell><p>{statsData?.last_videos_update ? statsData.last_videos_update + " UTC" : "NA"}</p></TableCell>
                     </TableRow>
                     <TableRow key="2">
                       <TableCell>Last channels update</TableCell>
-                      <TableCell><p>{statsData.last_channels_update} UTC</p></TableCell>
+                      <TableCell><p>{statsData?.last_channels_update ? statsData.last_channels_update + " UTC" : "NA"}</p></TableCell>
                     </TableRow>
                     <TableRow key="3">
                       <TableCell>Number of channels</TableCell>
-                      <TableCell>{statsData.n_of_channels}</TableCell>
+                      <TableCell>{statsData?.n_of_channels ?? "NA"}</TableCell>
                     </TableRow>
                     <TableRow key="4">
                       <TableCell>Number of videos</TableCell>
-                      <TableCell>{statsData.n_of_videos}</TableCell>
+                      <TableCell>{statsData?.n_of_videos ?? "NA"}</TableCell>
                     </TableRow>
                     <TableRow key="5">
                       <TableCell>Videos to watch</TableCell>
-                      <TableCell>{statsData.n_of_videos_to_watch}</TableCell>
+                      <TableCell>{statsData?.n_of_videos_to_watch ?? "NA"}</TableCell>
                     </TableRow>
                     <TableRow key="6">
                       <TableCell>Duration of videos to watch</TableCell>
-                      <TableCell>{convertiSecondi(statsData.time_to_watch)}</TableCell>
+                      <TableCell>{statsData?.time_to_watch ? convertiSecondi(statsData.time_to_watch) : "NA"}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
