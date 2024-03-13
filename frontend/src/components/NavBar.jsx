@@ -134,7 +134,7 @@ export default function NavBar({ activePage, handleNavLinkClick }) {
                     </TableRow>
                     <TableRow key="3">
                       <TableCell>Number of channels</TableCell>
-                      <TableCell>{statsDat?a.n_of_channels}</TableCell>
+                      <TableCell>{statsData?.n_of_channels}</TableCell>
                     </TableRow>
                     <TableRow key="4">
                       <TableCell>Number of videos</TableCell>
