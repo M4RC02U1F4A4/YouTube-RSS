@@ -24,6 +24,18 @@ randomDB = db['random']
 app = Flask(__name__)
 CORS(app)
 
+
+def is_short(video_id: str) -> bool:
+    try:
+        r = requests.get(
+            f"https://www.youtube.com/shorts/{video_id}",
+            allow_redirects=True,
+            timeout=5
+        )
+        return "shorts" in r.url
+    except Exception:
+        return False
+
 def time_to_watch():
     total_time = 0
     videos = videosDB.find({"viewed":0})
@@ -160,12 +172,13 @@ def update_videos():
                         thumbnail = r['items'][0]['snippet']['thumbnails']['standard']['url']
                     
                     dur = isodate.parse_duration(r['items'][0]['contentDetails']['duration'])
-                    if dur.total_seconds() > 62:
-                        viewed = 0
-                        hidden = 0
-                    else:
+
+                    if dur.total_seconds() <= 62 or is_short(entry.yt_videoid):
                         viewed = 0
                         hidden = 1
+                    else:
+                        viewed = 0
+                        hidden = 0
 
                     videosDB.insert_one({
                         "_id": entry.yt_videoid,
