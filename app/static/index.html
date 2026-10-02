@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube RSS</title>
+<link rel="icon" href="favicon.png">
+<style>
+  @font-face { font-family: "Bricolage Grotesque"; font-weight: 400 800; font-display: swap; src: url(fonts/bricolage-grotesque.woff2) format("woff2"); }
+  :root {
+    color-scheme: dark;
+    --bg: #171a21; --surface: #232733; --line: #2f3442; --fg: #e8e6e1; --muted: #8b90a0;
+    --accent: #f2b134; --on-accent: #171a21; --done: #5fb88a; --danger: #e5604f;
+    --ch-l: 62%; --ch-bg-l: 30%;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --bg: #eef0f4; --surface: #fff; --line: #d9dce4; --fg: #1b1e26; --muted: #5d6373;
+      --accent: #f2b134; --on-accent: #1b1e26; --done: #2f8a5c; --danger: #c43d2c;
+      --ch-l: 45%; --ch-bg-l: 82%;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { -webkit-tap-highlight-color: transparent; margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
+  a { color: inherit; text-decoration: none; cursor: pointer; }
+  button { font: inherit; cursor: pointer; border-radius: 999px; padding: .45em 1.1em; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+  button.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 600; }
+  button.danger { color: var(--danger); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  h1, h2, h3 { font-family: var(--display); margin: 0; }
+
+  body > header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; max-width: 1320px; margin: 0 auto; padding: 1.25rem 16px; }
+  body > header .brand { font: 800 1.25rem var(--display); letter-spacing: -.02em; }
+  body > header nav { display: flex; gap: .25rem; flex: 1; }
+  body > header nav a { padding: .35em .8em; border-radius: 999px; color: var(--muted); }
+  body > header nav a.active { color: var(--fg); background: var(--surface); }
+  body > header .actions { display: flex; gap: .5rem; }
+  body > header .ico { display: none; }
+  main { max-width: 1320px; margin: 0 auto; padding: 0 16px 6rem; }
+
+  .summary h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .summary p { color: var(--muted); margin: .4rem 0 1rem; }
+  .bar { display: flex; gap: 1px; height: 14px; border-radius: 7px; overflow: hidden; margin-bottom: 1.5rem; }
+  .bar a { min-width: 0; flex-basis: 0; background: hsl(var(--h) 65% var(--ch-l)); }
+  .bar a:hover { filter: brightness(1.25); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .chip { display: flex; align-items: center; gap: .5rem; padding: .25rem .8rem .25rem .25rem; border-radius: 999px; background: var(--surface); font-size: 14px; border: 1px solid transparent; }
+  .chip small { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chip.active { border-color: hsl(var(--h) 65% var(--ch-l)); }
+  .chips.filtering .chip:not(.active) { opacity: .5; }
+
+  .avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center;
+    font: 700 13px var(--display); color: var(--fg); background: hsl(var(--h) 35% var(--ch-bg-l)) center/cover;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px hsl(var(--h) 65% var(--ch-l)); }
+  .chip .avatar { width: 26px; height: 26px; font-size: 11px; box-shadow: none; }
+
+  section { margin-bottom: 2.5rem; }
+  section h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; margin-bottom: 1rem; display: flex; align-items: baseline; gap: .75rem; }
+  section h2 small { font: 400 14px system-ui, sans-serif; color: var(--muted); }
+  .grid { display: grid; gap: 1.75rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+
+  /* Off-screen cards skip layout and paint: keeps "All videos" fast with thousands of entries.
+     That also clips anything drawn outside the card, so the padding (cancelled by the margin)
+     leaves room for the avatar ring and the focus outline. */
+  .video { padding: 6px; margin: -6px; border-radius: 16px; outline-offset: -2px; content-visibility: auto; contain-intrinsic-size: auto 300px; }
+  .video:focus { outline: 2px solid var(--accent); }
+  .thumb { position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dur, .tag { position: absolute; bottom: 6px; right: 6px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; background: #000c; padding: 1px 6px; border-radius: 5px; }
+  .tag { right: auto; left: 6px; background: var(--done); }
+  .check { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; padding: 0; display: grid; place-items: center;
+    background: #000a; color: #fff; border: 0; backdrop-filter: blur(4px); transition: background .12s, color .12s; }
+  .check:hover, .check:focus-visible, .video:focus .check { background: var(--accent); color: var(--on-accent); }
+  .watched .thumb img { opacity: .45; }
+  .meta { display: flex; gap: .75rem; margin-top: .75rem; }
+  .meta > div { min-width: 0; display: flex; flex-direction: column; }
+  .title { font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .title:hover { text-decoration: underline; }
+  .meta small { color: var(--muted); }
+  .meta small a:hover { color: var(--fg); }
+  .leaving { animation: leave .22s ease forwards; }
+  @media (max-width: 640px) {
+    /* One row for brand + icon buttons, then the tabs as a full-width segmented control. */
+    body > header .actions { margin-left: auto; }
+    body > header .actions button { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; }
+    body > header .txt { display: none; }
+    body > header .ico { display: block; }
+    body > header nav { order: 3; flex-basis: 100%; gap: 0; padding: 3px; border-radius: 999px; background: var(--surface); }
+    body > header nav a { flex: 1; text-align: center; }
+    body > header nav a.active { background: var(--bg); }
+    .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 2rem; padding: 0 16px; }
+    .chip { flex: none; }
+  }
+  @media (pointer: coarse) {
+    .check { width: 44px; height: 44px; }
+    .shortcuts { display: none; }
+  }
+  @keyframes leave { to { opacity: 0; transform: scale(.95); } }
+
+  .channels { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .channel { background: var(--surface); border-radius: 14px; padding: 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+  .channel header { display: flex; align-items: center; gap: .9rem; }
+  .channel header div { flex: 1; min-width: 0; }
+  .channel h3 { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .channel .avatar { width: 44px; height: 44px; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px hsl(var(--h) 65% var(--ch-l)); }
+  .channel p { margin: 0; color: var(--muted); font-size: 14px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .channel dl { display: flex; gap: 1.25rem; margin: 0; font-size: 13px; color: var(--muted); }
+  .channel dd { margin: 0; color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .empty { text-align: center; padding: 5rem 1rem; }
+  .empty h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -.03em; margin-bottom: .5rem; }
+  .empty p { color: var(--muted); margin: 0 0 1.5rem; }
+
+  dialog { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 18px; width: min(860px, calc(100vw - 32px)); max-height: 88vh; padding: 1.5rem; }
+  dialog::backdrop { background: #0009; backdrop-filter: blur(4px); }
+  dialog > form:first-child { float: right; }
+  dialog h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+  dialog h3 { margin: 1.75rem 0 .75rem; }
+  .search { display: flex; gap: .5rem; margin-bottom: 1rem; }
+  .search input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: .55em 1em; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: .5em 0; border-bottom: 1px solid var(--line); } td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); font-size: 13px; }
+  kbd { font: 600 12px system-ui; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--surface); }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: .4rem 1rem; margin: 0; }
+  .keys dd { margin: 0; color: var(--muted); }
+
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 1rem;
+    background: var(--fg); color: var(--bg); padding: .6rem .6rem .6rem 1.2rem; border-radius: 999px; box-shadow: 0 8px 30px #0006; animation: up .2s ease; }
+  #toast button { background: transparent; color: var(--bg); border-color: currentColor; padding: .3em .9em; }
+  #toast[hidden] { display: none; }
+  @keyframes up { from { opacity: 0; transform: translate(-50%, 10px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">YouTube RSS</span>
+  <nav><a href="#queue">To watch</a><a href="#videos">All videos</a><a href="#channels">Channels</a></nav>
+  <div class="actions">
+    <button class="primary" data-dialog="add-dlg" aria-label="Add channel"><svg class="ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="txt">Add channel</span></button>
+    <button data-dialog="settings-dlg" aria-label="Settings"><svg class="ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M20 7h-9M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg><span class="txt">Settings</span></button>
+  </div>
+</header>
+<main id="app"></main>
+<div id="toast" role="status" hidden></div>
+
+<dialog id="add-dlg">
+  <form method="dialog"><button>Close</button></form>
+  <h2>Add channel</h2>
+  <form class="search" id="search-form">
+    <input name="q" placeholder="Channel name" required aria-label="Channel name">
+    <button class="primary">Search</button>
+  </form>
+  <div class="channels" id="search-results"></div>
+</dialog>
+
+<dialog id="settings-dlg">
+  <form method="dialog"><button>Close</button></form>
+  <h2>Settings</h2>
+  <table id="stats"></table>
+  <h3>Check now</h3>
+  <button data-update="videos">Check for new videos</button>
+  <button data-update="channels">Refresh channel info</button>
+  <p class="hint">Videos are checked every hour and channels once a day. Checking by hand too often can use up the daily YouTube API quota.</p>
+  <div class="shortcuts">
+  <h3>Keyboard shortcuts</h3>
+  <dl class="keys">
+    <dt><kbd>j</kbd> <kbd>k</kbd></dt><dd>Next and previous video</dd>
+    <dt><kbd>Enter</kbd></dt><dd>Open on YouTube and mark as watched</dd>
+    <dt><kbd>w</kbd></dt><dd>Mark as watched, or back to watch</dd>
+  </dl>
+  </div>
+</dialog>
+
+<script>
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let videos = [], channels = {}, stats = {}, filter = null;
+
+async function api(path, opts) {
+  const r = await fetch(path, opts), body = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(body.message || `Request failed (${r.status}).`); throw new Error(body.message); }
+  return body.data;
+}
+const post = (path, body, method = 'POST') =>
+  api(path, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+const num = new Intl.NumberFormat('en', { notation: 'compact' }).format;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+// Golden-angle spacing keeps neighbouring channels' colours far apart.
+const hue = id => (Object.keys(channels).sort().indexOf(id) * 137.508 + 20) % 360;
+const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+function ago(date) {
+  let s = (new Date(date) - Date.now()) / 1000;
+  for (const [unit, n] of [['second', 60], ['minute', 60], ['hour', 24], ['day', 30], ['month', 12], ['year', Infinity]]) {
+    if (Math.abs(s) < n) return rtf.format(Math.round(s), unit);
+    s /= n;
+  }
+}
+function dur(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = Math.floor(sec % 60);
+  return (h ? h + ':' : '') + String(m).padStart(h ? 2 : 1, '0') + ':' + String(s).padStart(2, '0');
+}
+function span(sec) {
+  const h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60);
+  return h ? `${h} h ${m} min` : `${m} min`;
+}
+function day(date) {
+  const midnight = new Date().setHours(0, 0, 0, 0), d = Math.ceil((midnight - new Date(date)) / 864e5);
+  return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 7 ? 'This week' : 'Earlier';
+}
+const avatar = c =>
+  `<span class="avatar" style="--h:${hue(c._id)};background-image:url('${esc(c.logo)}')">${c.logo ? '' : esc(c.title[0])}</span>`;
+const icon = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const CHECK = icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), UNDO = icon('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>');
+
+function videoCard(v) {
+  const c = channels[v.channel] || { _id: v.channel, title: '?', logo: '' }, id = esc(v._id);
+  return `<article class="video${v.viewed ? ' watched' : ''}" id="v-${id}" data-id="${id}" tabindex="0">
+    <div class="thumb">
+      <a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener" data-open="${id}" tabindex="-1"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"></a>
+      <span class="dur">${dur(v.duration)}</span>
+      ${v.viewed ? '<span class="tag">Watched</span>' : ''}
+      ${v.viewed
+        ? `<button class="check" data-tbwatch="${id}" aria-label="Move back to watch" title="Move back to watch">${UNDO}</button>`
+        : `<button class="check" data-watch="${id}" aria-label="Mark as watched" title="Mark as watched">${CHECK}</button>`}
+    </div>
+    <div class="meta">
+      <a data-filter="${esc(c._id)}" tabindex="-1">${avatar(c)}</a>
+      <div>
+        <a class="title" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener" data-open="${id}" tabindex="-1">${esc(v.title)}</a>
+        <small><a data-filter="${esc(c._id)}" tabindex="-1">${esc(c.title)}</a></small>
+        <small>${ago(v.published)}</small>
+      </div>
+    </div>
+  </article>`;
+}
+
+function channelCard(c, action = 'remove') {
+  const queued = videos.filter(v => v.channel === c._id && !v.viewed).length;
+  return `<div class="channel" style="--h:${hue(c._id)}">
+    <header>
+      ${avatar(c)}
+      <div><h3>${esc(c.title)}</h3><a class="hint" href="https://www.youtube.com/channel/${esc(c._id)}" target="_blank">Open on YouTube</a></div>
+      ${action === 'add'
+        ? `<button class="primary" data-add="${esc(c._id)}">Add</button>`
+        : action === 'added' ? '<span class="hint">Added</span>'
+        : `<button class="danger" data-remove="${esc(c._id)}">Remove</button>`}
+    </header>
+    <p>${esc(c.description)}</p>
+    ${c.subscriberCount != null ? `<dl>
+      <div><dt>To watch</dt><dd>${queued}</dd></div>
+      <div><dt>Subscribers</dt><dd>${num(c.subscriberCount)}</dd></div>
+      <div><dt>Videos</dt><dd>${num(c.videoCount)}</dd></div>
+    </dl>` : ''}
+  </div>`;
+}
+
+function videosPage(page) {
+  const list = page === 'queue' ? videos.filter(v => !v.viewed) : videos;
+  if (page === 'queue' && !list.length) return `<div class="empty">
+    <h1>You're all caught up</h1>
+    <p>Last checked for new videos ${stats.last_videos_update ? `on ${esc(stats.last_videos_update)} UTC` : 'never'}.</p>
+    <button class="primary" data-update="videos">Check for new videos</button></div>`;
+  if (filter && !list.some(v => v.channel === filter)) filter = null;
+  const shown = filter ? list.filter(v => v.channel === filter) : list;
+  const total = shown.reduce((s, v) => s + v.duration, 0);
+
+  const counts = {};
+  list.forEach(v => counts[v.channel] = (counts[v.channel] || 0) + 1);
+  const chips = Object.keys(counts).filter(id => channels[id]).sort((a, b) => counts[b] - counts[a]).map(id =>
+    `<a class="chip${filter === id ? ' active' : ''}" data-filter="${esc(id)}" style="--h:${hue(id)}">${avatar(channels[id])}${esc(channels[id].title)} <small>${counts[id]}</small></a>`).join('');
+
+  const groups = {};
+  shown.forEach(v => (groups[day(v.published)] ??= []).push(v));
+  const sections = ['Today', 'Yesterday', 'This week', 'Earlier'].filter(k => groups[k]).map(k => `<section>
+    <h2>${k} <small>${plural(groups[k].length, 'video')}, ${span(groups[k].reduce((s, v) => s + v.duration, 0))}</small></h2>
+    <div class="grid">${groups[k].map(videoCard).join('')}</div></section>`).join('');
+
+  return (page === 'queue' ? `<div class="summary">
+      <h1>${span(total)} to watch</h1>
+      <p>${plural(shown.length, 'video')}${filter ? ` from ${esc(channels[filter].title)}` : ` from ${plural(Object.keys(counts).length, 'channel')}`}</p>
+      <div class="bar">${shown.map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
+    </div>` : '') +
+    `<div class="chips${filter ? ' filtering' : ''}">${chips}</div>` + sections;
+}
+
+function render() {
+  const page = location.hash.slice(1) || 'queue';
+  document.querySelectorAll('body > header nav a').forEach(a => a.classList.toggle('active', a.hash === '#' + page));
+  $('#app').innerHTML = page === 'channels'
+    ? `<div class="channels">${Object.values(channels).sort((a, b) => b.subscriberCount - a.subscriberCount).map(c => channelCard(c)).join('')}</div>`
+    : videosPage(page);
+}
+
+async function load() {
+  [videos, channels, stats] = await Promise.all([api('/get/videos'), api('/get/channels'), api('/stats')]);
+  render();
+}
+
+const cards = () => [...document.querySelectorAll('.video')];
+
+async function setViewed(id, viewed) {
+  const el = document.getElementById('v-' + id), i = cards().indexOf(el);
+  const hadFocus = el?.contains(document.activeElement);
+  if (viewed && el && !REDUCED) { el.classList.add('leaving'); await sleep(220); }
+  await api(`/${viewed ? 'watch' : 'tbwatch'}/video/${id}`);
+  await load();
+  if (viewed) toast('Marked as watched', id); else $('#toast').hidden = true;
+  if (hadFocus) { const c = cards(); c[Math.min(i, c.length - 1)]?.focus(); }
+}
+
+let toastTimer;
+function toast(msg, undoId) {
+  const t = $('#toast');
+  t.innerHTML = `${msg}${undoId ? ` <button data-tbwatch="${esc(undoId)}">Undo</button>` : ''}`;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.hidden = true, 5000);
+}
+
+async function loadStats() {
+  stats = await api('/stats');
+  const rows = [
+    ['Last check for new videos', stats.last_videos_update ? stats.last_videos_update + ' UTC' : 'Never'],
+    ['Last channel info refresh', stats.last_channels_update ? stats.last_channels_update + ' UTC' : 'Never'],
+    ['Channels', stats.n_of_channels], ['Videos stored', stats.n_of_videos],
+    ['Videos to watch', stats.n_of_videos_to_watch], ['Time to watch', span(stats.time_to_watch)],
+  ];
+  $('#stats').innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('');
+}
+
+// One click handler for the whole page, driven by data-* attributes.
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-add],[data-remove],[data-update],[data-dialog]');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.open) setViewed(d.open, true);
+  else if (d.watch) setViewed(d.watch, true);
+  else if (d.tbwatch) setViewed(d.tbwatch, false);
+  else if (d.filter) { filter = filter === d.filter ? null : d.filter; location.hash === '#channels' ? location.hash = 'queue' : render(); }
+  else if (d.jump) { const el = document.getElementById('v-' + d.jump); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' }); }
+  else if (d.add) { await post('/add/channel', { channel_id: d.add }); t.outerHTML = '<span class="hint">Added</span>'; load(); }
+  else if (d.remove) {
+    if (!confirm(`Remove ${channels[d.remove]?.title || d.remove} and all its videos?`)) return;
+    await post('/remove/channel', { channel_id: d.remove }, 'DELETE');
+    load();
+  } else if (d.update) {
+    const label = t.textContent;
+    t.disabled = true; t.textContent = 'Checking…';
+    await api(`/update/${d.update}`);
+    t.disabled = false; t.textContent = label;
+    await load(); loadStats();
+  } else if (d.dialog) {
+    if (d.dialog === 'settings-dlg') loadStats();
+    document.getElementById(d.dialog).showModal();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, dialog') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const list = cards(), cur = document.activeElement?.closest?.('.video'), i = list.indexOf(cur);
+  if (e.key === 'j' || e.key === 'k') list[i < 0 ? 0 : Math.max(0, Math.min(list.length - 1, i + (e.key === 'j' ? 1 : -1)))]?.focus();
+  else if (e.key === 'w' && cur) setViewed(cur.dataset.id, !cur.classList.contains('watched'));
+  else if (e.key === 'Enter' && cur === document.activeElement) cur.querySelector('[data-open]').click();
+});
+
+$('#search-form').onsubmit = async e => {
+  e.preventDefault();
+  const res = await api(`/search?q=${encodeURIComponent(new FormData(e.target).get('q'))}`);
+  $('#search-results').innerHTML = res.map(i => channelCard({
+    _id: i.id.channelId, title: i.snippet.channelTitle, description: i.snippet.description, logo: i.snippet.thumbnails.default.url,
+  }, channels[i.id.channelId] ? 'added' : 'add')).join('');
+};
+window.onhashchange = () => { filter = null; render(); };
+// Coming back from the YouTube app or another tab: pick up changes made elsewhere.
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && load());
+load();
+
+</script>
+</body>
+</html>

@@ -1,7 +1,0 @@
-flask
-pymongo
-gunicorn
-requests
-feedparser
-isodate
-flask-cors
