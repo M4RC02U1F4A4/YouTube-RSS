@@ -69,14 +69,14 @@
      That also clips anything drawn outside the card, so the padding (cancelled by the margin)
      leaves room for the avatar ring and the focus outline. */
   .video { padding: 6px; margin: -6px; border-radius: 16px; outline-offset: -2px; content-visibility: auto; contain-intrinsic-size: auto 300px; }
-  .video:focus { outline: 2px solid var(--accent); }
+  .video:focus-visible { outline: 2px solid var(--accent); }
   .thumb { position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: var(--surface); }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .dur, .tag { position: absolute; bottom: 6px; right: 6px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; background: #000c; padding: 1px 6px; border-radius: 5px; }
   .tag { right: auto; left: 6px; background: var(--done); }
   .check { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; padding: 0; display: grid; place-items: center;
     background: #000a; color: #fff; border: 0; backdrop-filter: blur(4px); transition: background .12s, color .12s; }
-  .check:hover, .check:focus-visible, .video:focus .check { background: var(--accent); color: var(--on-accent); }
+  .check:hover, .check:focus-visible, .video:focus-visible .check { background: var(--accent); color: var(--on-accent); }
   .watched .thumb img { opacity: .45; }
   .meta { display: flex; gap: .75rem; margin-top: .75rem; }
   .meta > div { min-width: 0; display: flex; flex-direction: column; }
@@ -333,9 +333,10 @@ async function load() {
 
 const cards = () => [...document.querySelectorAll('.video')];
 
-async function setViewed(id, viewed) {
+// keyboard: move focus on to the next card, so j/k/w keep working from where you were.
+async function setViewed(id, viewed, keyboard = true) {
   const el = document.getElementById('v-' + id), i = cards().indexOf(el);
-  const hadFocus = el?.contains(document.activeElement);
+  const hadFocus = keyboard && el?.contains(document.activeElement);
   if (viewed && el && !REDUCED) { el.classList.add('leaving'); await sleep(220); }
   await api(`/${viewed ? 'watch' : 'tbwatch'}/video/${id}`);
   await load();
@@ -367,9 +368,10 @@ async function loadStats() {
 document.addEventListener('click', async e => {
   const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-chips],[data-add],[data-remove],[data-update],[data-dialog]');
   if (!t) return;
-  const d = t.dataset;
-  if (d.open) setViewed(d.open, true);
-  else if (d.watch) setViewed(d.watch, true);
+  // Mouse clicks have detail >= 1; Enter on a card or a focused button gives 0.
+  const d = t.dataset, keyboard = e.detail === 0;
+  if (d.open) setViewed(d.open, true, keyboard);
+  else if (d.watch) setViewed(d.watch, true, keyboard);
   else if (d.tbwatch) setViewed(d.tbwatch, false);
   else if (d.filter) { filter = filter === d.filter ? null : d.filter; location.hash === '#channels' ? location.hash = 'queue' : render(); }
   else if ('chips' in d) { chipsOpen = !chipsOpen; fitChips(); }
