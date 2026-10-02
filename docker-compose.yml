@@ -1,46 +1,35 @@
-version: '3.7'
-
 services:
 
-  frontend:
-    image: ghcr.io/m4rc02u1f4a4/ytrss-frontend:latest
-    restart: always
-    environment:
-      REACT_APP_API_BASE_URL: http://<HOST_IP>:5001
-    ports:
-      - 8080:8080
-
-
-  updater:
-    image: alpine
-    environment:
-      REACT_APP_API_BASE_URL: http://backend:5001
-    command: 
-      - /bin/sh
-      - -c
-      - |
-        apk --update add curl && \
-        echo $${REACT_APP_API_BASE_URL} && \
-        echo "0 0 */1 * * curl -X GET $${REACT_APP_API_BASE_URL}/update/channels" > /var/spool/cron/crontabs/root && \
-        echo "0 */1 * * * curl -X GET $${REACT_APP_API_BASE_URL}/update/videos" >> /var/spool/cron/crontabs/root && \
-        echo "0 0 */1 * * curl -X GET $${REACT_APP_API_BASE_URL}/clean/videos" >> /var/spool/cron/crontabs/root && \
-        crond -l 2 -f
-    depends_on:
-      - backend
-
-
-  backend:
-    image: ghcr.io/m4rc02u1f4a4/ytrss-backend:latest
+  app:
+    image: ghcr.io/m4rc02u1f4a4/ytrss:latest
     restart: always
     environment:
       MONGODB_HOST: db
       MONGODB_PORT: 27017
       G_API_KEY: <GOOGLE_API_KEY>
-      PYTHONUNBUFFERED: 1
     ports:
-      - 5001:5001
+      - 8080:8080
     depends_on:
       - db
+
+
+  # Calls the periodic jobs. Kept apart from the app so it can be replaced,
+  # e.g. by Kubernetes CronJobs, instead of running a scheduler inside the app.
+  updater:
+    image: alpine
+    restart: always
+    environment:
+      APP_URL: http://app:8080
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "0 0 * * * wget -q -O - $${APP_URL}/update/channels" > /var/spool/cron/crontabs/root && \
+        echo "0 * * * * wget -q -O - $${APP_URL}/update/videos" >> /var/spool/cron/crontabs/root && \
+        echo "0 0 * * * wget -q -O - $${APP_URL}/clean/videos" >> /var/spool/cron/crontabs/root && \
+        crond -l 2 -f
+    depends_on:
+      - app
 
 
   db:
