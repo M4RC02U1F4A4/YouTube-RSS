@@ -50,7 +50,10 @@
   .chip { display: flex; align-items: center; gap: .5rem; padding: .25rem .8rem .25rem .25rem; border-radius: 999px; background: var(--surface); font-size: 14px; border: 1px solid transparent; }
   .chip small { color: var(--muted); font-variant-numeric: tabular-nums; }
   .chip.active { border-color: hsl(var(--h) 65% var(--ch-l)); }
-  .chips.filtering .chip:not(.active) { opacity: .5; }
+  .chips.filtering .chip:not(.active, .more) { opacity: .5; }
+  .chips [hidden] { display: none; }
+  .chip.more { padding: 0 1rem; color: var(--muted); border-color: var(--line); }
+  .chip.more:hover { color: var(--fg); }
 
   .avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center;
     font: 700 13px var(--display); color: var(--fg); background: hsl(var(--h) 35% var(--ch-bg-l)) center/cover;
@@ -178,7 +181,7 @@
 
 <script>
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let videos = [], channels = {}, stats = {}, filter = null;
+let videos = [], channels = {}, stats = {}, filter = null, chipsOpen = false;
 
 async function api(path, opts) {
   const r = await fetch(path, opts), body = await r.json().catch(() => ({}));
@@ -288,7 +291,30 @@ function videosPage(page) {
       <p>${plural(shown.length, 'video')}${filter ? ` from ${esc(channels[filter].title)}` : ` from ${plural(Object.keys(counts).length, 'channel')}`}</p>
       <div class="bar">${shown.map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
     </div>` : '') +
-    `<div class="chips${filter ? ' filtering' : ''}">${chips}</div>` + sections;
+    `<div class="chips${filter ? ' filtering' : ''}">${chips}<button class="chip more" data-chips></button></div>` + sections;
+}
+
+// With many channels the chips would push the videos far down: keep them to three rows,
+// always including the active one, and put the rest behind a "+N more" chip.
+const CHIP_ROWS = 3;
+function fitChips() {
+  const box = $('.chips');
+  if (!box) return;
+  const chips = [...box.querySelectorAll('.chip:not(.more)')], more = box.querySelector('.more');
+  chips.forEach(c => c.hidden = false);
+  more.hidden = false; more.textContent = 'Show less';
+  const rows = [...new Set(chips.map(c => c.offsetTop))];
+  // On phones the chips are a single scrolling row, so there is nothing to collapse.
+  if (getComputedStyle(box).flexWrap === 'nowrap' || rows.length <= CHIP_ROWS) { more.hidden = true; return; }
+  if (chipsOpen) return;
+  const limit = rows[CHIP_ROWS], hideable = chips.filter(c => !c.classList.contains('active'));
+  let n = 0;
+  hideable.forEach(c => { if (c.offsetTop >= limit) { c.hidden = true; n++; } });
+  for (let i = hideable.length - n - 1; ; i--) {
+    more.textContent = `+${n} more`;
+    if (more.offsetTop < limit || i < 0) break;
+    hideable[i].hidden = true; n++;
+  }
 }
 
 function render() {
@@ -297,6 +323,7 @@ function render() {
   $('#app').innerHTML = page === 'channels'
     ? `<div class="channels">${Object.values(channels).sort((a, b) => b.subscriberCount - a.subscriberCount).map(c => channelCard(c)).join('')}</div>`
     : videosPage(page);
+  fitChips();
 }
 
 async function load() {
@@ -338,13 +365,14 @@ async function loadStats() {
 
 // One click handler for the whole page, driven by data-* attributes.
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-add],[data-remove],[data-update],[data-dialog]');
+  const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-chips],[data-add],[data-remove],[data-update],[data-dialog]');
   if (!t) return;
   const d = t.dataset;
   if (d.open) setViewed(d.open, true);
   else if (d.watch) setViewed(d.watch, true);
   else if (d.tbwatch) setViewed(d.tbwatch, false);
   else if (d.filter) { filter = filter === d.filter ? null : d.filter; location.hash === '#channels' ? location.hash = 'queue' : render(); }
+  else if ('chips' in d) { chipsOpen = !chipsOpen; fitChips(); }
   else if (d.jump) { const el = document.getElementById('v-' + d.jump); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' }); }
   else if (d.add) { await post('/add/channel', { channel_id: d.add }); t.outerHTML = '<span class="hint">Added</span>'; load(); }
   else if (d.remove) {
@@ -379,6 +407,7 @@ $('#search-form').onsubmit = async e => {
   }, channels[i.id.channelId] ? 'added' : 'add')).join('');
 };
 window.onhashchange = () => { filter = null; render(); };
+addEventListener('resize', fitChips);
 // Coming back from the YouTube app or another tab: pick up changes made elsewhere.
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && load());
 load();
