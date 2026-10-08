@@ -7,6 +7,7 @@ import feedparser
 from datetime import datetime, timedelta, timezone
 import isodate
 import logging
+import re
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.INFO)
 
@@ -18,6 +19,8 @@ G_API_KEY = os.getenv('G_API_KEY')
 YT_API = "https://www.googleapis.com/youtube/v3"
 RSS_URL = "https://www.youtube.com/feeds/videos.xml?channel_id="
 KEEP_DAYS = 30
+# A bare id, or the id inside a watch, youtu.be, shorts, live or embed link.
+VIDEO_ID = re.compile(r'(?:^|v=|youtu\.be/|/shorts/|/live/|/embed/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])')
 
 mongo_client = pymongo.MongoClient(f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}")
 db = mongo_client[MONGODB_DB]
@@ -131,6 +134,39 @@ def add_channel():
     except pymongo.errors.DuplicateKeyError:
         return error(f"Channel {channel_id} is already added.", 409)
     return ok(f"Channel {channel_id} added.")
+
+
+@app.route('/add/video', methods=['POST'])
+def add_video():
+    match = VIDEO_ID.search((request.get_json(silent=True) or {}).get('url') or '')
+    if not match:
+        return error('Missing or invalid video link.', 400)
+    video_id = match[1]
+    # A short imported from a feed is already stored, just hidden.
+    if videosDB.update_one({"_id": video_id, "hidden": 1}, {"$set": {"hidden": 0}}).modified_count:
+        return ok(f"Video {video_id} added.")
+    if videosDB.count_documents({"_id": video_id}):
+        return error(f"Video {video_id} is already added.", 409)
+    items = youtube('videos', part='snippet,contentDetails', id=video_id)
+    if not items:
+        return error(f"Video {video_id} not found on YouTube.", 404)
+    snippet = items[0]['snippet']
+    video = {
+        "_id": video_id,
+        "published": snippet['publishedAt'],
+        "title": snippet['title'],
+        "channel": snippet['channelId'],
+        "duration": isodate.parse_duration(items[0]['contentDetails']['duration']).total_seconds(),
+        "viewed": 0,
+        "hidden": 0,
+    }
+    # The UI shows followed channels from their own record, the others from these fields.
+    if not channelsDB.count_documents({"_id": video['channel']}):
+        video['channel_title'] = snippet['channelTitle']
+        logo = youtube('channels', part='snippet', id=video['channel'])
+        video['channel_logo'] = logo[0]['snippet']['thumbnails']['medium']['url'] if logo else ''
+    videosDB.insert_one(video)
+    return ok(f"Video {video_id} added.")
 
 
 @app.route('/remove/channel', methods=['DELETE'])

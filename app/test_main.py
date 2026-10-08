@@ -24,7 +24,9 @@ FEED = f"""<?xml version="1.0" encoding="UTF-8"?>
 <entry><yt:videoId>short</yt:videoId><title>Short</title><published>{iso(3)}</published></entry>
 <entry><yt:videoId>old</yt:videoId><title>Old</title><published>{iso(40)}</published></entry>
 </feed>"""
-DURATIONS = {'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M'}
+DURATIONS = {'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M', 'spotvideo01': 'PT20S', 'spotvideo02': 'PT5M'}
+SNIPPETS = {'spotvideo01': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC2', 'channelTitle': 'Two'},
+            'spotvideo02': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC1', 'channelTitle': 'One'}}
 CHANNEL = {'id': 'UC1', 'snippet': {'title': 'One', 'description': 'd', 'publishedAt': 'x',
            'thumbnails': {'medium': {'url': 'logo'}}}, 'statistics': {'viewCount': '10', 'videoCount': '2'}}
 calls = []
@@ -33,9 +35,10 @@ calls = []
 def fake_youtube(endpoint, **params):
     calls.append((endpoint, params.get('id')))
     if endpoint == 'channels':
-        return [CHANNEL] if 'UC1' in params['id'] else []
+        return [{**CHANNEL, 'id': i} for i in params['id'].split(',') if i in ('UC1', 'UC2')]
     if endpoint == 'videos':
-        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]}} for i in params['id'].split(',')]
+        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]}, 'snippet': SNIPPETS.get(i)}
+                for i in params['id'].split(',') if i in DURATIONS]
     return [{'id': {'channelId': 'UC1'}, 'snippet': {}}]
 
 
@@ -85,6 +88,24 @@ main.videosDB.insert_many([
 ])
 c.get('/clean/videos')
 assert {v['_id'] for v in main.videosDB.find()} == {'tiny', 'short', 'legacy-new', 'unwatched-old'}
+
+# Single videos: any link shape, shorts kept, old dates kept, channel shown even if not followed
+assert c.post('/add/video', json={}).status_code == 400
+assert c.post('/add/video', json={'url': 'https://example.com/watch?v=short'}).status_code == 400
+assert c.post('/add/video', json={'url': 'missingvid1'}).status_code == 404
+assert c.post('/add/video', json={'url': 'https://youtu.be/spotvideo01?t=3'}).status_code == 200
+assert c.post('/add/video', json={'url': 'https://www.youtube.com/watch?v=spotvideo01'}).status_code == 409
+spot = main.videosDB.find_one({'_id': 'spotvideo01'})
+assert (spot['hidden'], spot['duration'], spot['published']) == (0, 20, '2020-01-01T00:00:00Z'), spot
+assert (spot['channel'], spot['channel_title'], spot['channel_logo']) == ('UC2', 'Two', 'logo'), spot
+calls.clear()
+assert c.post('/add/video', json={'url': 'https://www.youtube.com/shorts/spotvideo02'}).status_code == 200
+assert 'channel_title' not in main.videosDB.find_one({'_id': 'spotvideo02'}) and ('channels', 'UC1') not in calls
+main.videosDB.insert_one({'_id': 'hiddenshort', 'viewed': 0, 'hidden': 1, 'published': iso(1)})
+calls.clear()
+assert c.post('/add/video', json={'url': 'hiddenshort'}).status_code == 200 and not calls
+assert main.videosDB.find_one({'_id': 'hiddenshort'})['hidden'] == 0
+main.videosDB.delete_many({'_id': {'$in': ['spotvideo01', 'spotvideo02', 'hiddenshort']}})
 
 # Search, channel refresh, UI, errors
 assert c.get('/search').status_code == 400
