@@ -327,15 +327,24 @@ function fitChips() {
 function render() {
   const page = location.hash.slice(1) || 'queue';
   document.querySelectorAll('body > header nav a').forEach(a => a.classList.toggle('active', a.hash === '#' + page));
+  // Fresh cards off screen only have an estimated height, so swapping them all would make the page
+  // jump: put back the old element of every card that did not change, with its measured size.
+  const old = new Map(cards().map(c => [c.id, c]));
   $('#app').innerHTML = page === 'channels'
     ? `<div class="channels">${Object.values(channels).sort((a, b) => b.subscriberCount - a.subscriberCount).map(c => channelCard(c)).join('')}</div>`
     : videosPage(page);
+  for (const c of cards()) { const o = old.get(c.id); if (o?.outerHTML === c.outerHTML) c.replaceWith(o); }
   fitChips();
 }
 
 async function load() {
   [videos, channels, stats] = await Promise.all([api('/get/videos'), api('/get/channels'), api('/stats')]);
+  // Cards that did change above the screen still get an estimated height: hold the first
+  // unchanged card on screen in place.
+  const onScreen = cards().map(c => [c, c.getBoundingClientRect()]).filter(([, r]) => r.bottom > 0 && r.top < innerHeight);
   render();
+  const [ref, r] = onScreen.find(([c]) => c.isConnected) || [];
+  if (ref) scrollBy(0, ref.getBoundingClientRect().top - r.top);
 }
 
 const cards = () => [...document.querySelectorAll('.video')];
