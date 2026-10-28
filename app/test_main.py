@@ -25,8 +25,12 @@ FEED = f"""<?xml version="1.0" encoding="UTF-8"?>
 <entry><yt:videoId>short</yt:videoId><title>Short</title><published>{iso(3)}</published></entry>
 <entry><yt:videoId>old</yt:videoId><title>Old</title><published>{iso(40)}</published></entry>
 </feed>"""
-DURATIONS = {'upcoming': None, 'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M', 'spotvideo01': 'PT20S', 'spotvideo02': 'PT5M'}
-SNIPPETS = {'spotvideo01': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC2', 'channelTitle': 'Two'},
+DURATIONS = {'upcoming': None, 'premiere001': None, 'premiere002': 'PT20M', 'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M', 'spotvideo01': 'PT20S', 'spotvideo02': 'PT5M'}
+# Premieres added by link: scheduled in two days, not out yet.
+SCHEDULE = {'premiere001': iso(-2), 'premiere002': iso(-2)}
+SNIPPETS = {**{i: {'publishedAt': iso(1), 'title': 'Premiere', 'channelId': 'UC1', 'channelTitle': 'One',
+                   'liveBroadcastContent': 'upcoming'} for i in SCHEDULE},
+            'spotvideo01': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC2', 'channelTitle': 'Two'},
             'spotvideo02': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC1', 'channelTitle': 'One'}}
 CHANNEL = {'id': 'UC1', 'snippet': {'title': 'One', 'description': 'd', 'publishedAt': 'x',
            'thumbnails': {'medium': {'url': 'logo'}}}, 'statistics': {'viewCount': '10', 'videoCount': '2'}}
@@ -39,7 +43,8 @@ def fake_youtube(endpoint, **params):
         return [{**CHANNEL, 'id': i} for i in params['id'].split(',') if i in ('UC1', 'UC2')]
     if endpoint == 'videos':
         # A scheduled premiere has no duration yet.
-        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]} if DURATIONS[i] else {}, 'snippet': SNIPPETS.get(i)}
+        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]} if DURATIONS[i] else {}, 'snippet': SNIPPETS.get(i),
+                 'liveStreamingDetails': {'scheduledStartTime': SCHEDULE[i]} if i in SCHEDULE else {}}
                 for i in params['id'].split(',') if i in DURATIONS]
     return [{'id': {'channelId': 'UC1'}, 'snippet': {}}]
 
@@ -114,6 +119,24 @@ calls.clear()
 assert c.post('/add/video', json={'url': 'hiddenshort'}).status_code == 200 and not calls
 assert main.videosDB.find_one({'_id': 'hiddenshort'})['hidden'] == 0
 main.videosDB.delete_many({'_id': {'$in': ['spotvideo01', 'spotvideo02', 'hiddenshort']}})
+
+# Premieres added by link: kept on top under their schedule until out, dropped if they disappear
+for i in SCHEDULE:
+    assert c.post('/add/video', json={'url': i}).status_code == 200
+    v = main.videosDB.find_one({'_id': i})
+    assert (v['upcoming'], v['duration'], v['published']) == (1, 0, SCHEDULE[i]), v
+assert c.get('/get/videos').json['data'][0]['_id'] in SCHEDULE
+SCHEDULE['premiere001'] = iso(-3)
+del DURATIONS['premiere002']
+c.get('/update/videos')
+assert main.videosDB.find_one({'_id': 'premiere001'})['published'] == SCHEDULE['premiere001']
+assert not main.videosDB.find_one({'_id': 'premiere002'}), 'gone from YouTube, must be dropped'
+DURATIONS['premiere001'] = 'PT30M'
+SNIPPETS['premiere001']['liveBroadcastContent'] = 'none'
+c.get('/update/videos')
+v = main.videosDB.find_one({'_id': 'premiere001'})
+assert (v['duration'], v['hidden'], 'upcoming' in v) == (1800, 0, False), v
+main.videosDB.delete_one({'_id': 'premiere001'})
 
 # Search, channel refresh, UI, errors
 assert c.get('/search').status_code == 400

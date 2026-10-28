@@ -235,7 +235,7 @@ function videoCard(v) {
   return `<article class="video${v.viewed ? ' watched' : ''}" id="v-${id}" data-id="${id}" tabindex="0">
     <div class="thumb">
       <a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener" data-open="${id}" tabindex="-1"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"></a>
-      <span class="dur">${dur(v.duration)}</span>
+      <span class="dur">${v.upcoming ? 'Upcoming' : dur(v.duration)}</span>
       ${v.viewed ? '<span class="tag">Watched</span>' : ''}
       ${v.viewed
         ? `<button class="check" data-tbwatch="${id}" aria-label="Move back to watch" title="Move back to watch">${UNDO}</button>`
@@ -288,15 +288,16 @@ function videosPage(page) {
     `<a class="chip${filter === id ? ' active' : ''}" data-filter="${esc(id)}" style="--h:${hue(id)}">${avatar(channels[id])}${esc(channels[id].title)} <small>${counts[id]}</small></a>`).join('');
 
   const groups = {};
-  shown.forEach(v => (groups[day(v.published)] ??= []).push(v));
-  const sections = ['Today', 'Yesterday', 'This week', 'Earlier'].filter(k => groups[k]).map(k => `<section>
-    <h2>${k} <small>${plural(groups[k].length, 'video')}, ${span(groups[k].reduce((s, v) => s + v.duration, 0))}</small></h2>
+  // Upcoming premieres and live streams have no duration yet, they go first.
+  shown.forEach(v => (groups[v.upcoming ? 'Upcoming' : day(v.published)] ??= []).push(v));
+  const sections = ['Upcoming', 'Today', 'Yesterday', 'This week', 'Earlier'].filter(k => groups[k]).map(k => `<section>
+    <h2>${k} <small>${plural(groups[k].length, 'video')}${k === 'Upcoming' ? '' : `, ${span(groups[k].reduce((s, v) => s + v.duration, 0))}`}</small></h2>
     <div class="grid">${groups[k].map(videoCard).join('')}</div></section>`).join('');
 
   return (page === 'queue' ? `<div class="summary">
       <h1>${span(total)} to watch</h1>
       <p>${plural(shown.length, 'video')}${filter ? ` from ${esc(channels[filter].title)}` : ` from ${plural(Object.keys(counts).length, 'channel')}`}</p>
-      <div class="bar">${shown.map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
+      <div class="bar">${shown.filter(v => !v.upcoming).map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
     </div>` : '') +
     `<div class="chips${filter ? ' filtering' : ''}">${chips}<button class="chip more" data-chips></button></div>` + sections;
 }

@@ -90,6 +90,17 @@ def is_short(video_id: str) -> bool:
         return False
 
 
+def release(item):
+    # Premieres and live streams are upcoming until they air, and have no duration (or a
+    # zero one while live): they stay at the top of the list, under their scheduled time.
+    duration = item.get('contentDetails', {}).get('duration')
+    duration = isodate.parse_duration(duration).total_seconds() if duration else 0
+    if item['snippet'].get('liveBroadcastContent') == 'upcoming' or not duration:
+        scheduled = item.get('liveStreamingDetails', {}).get('scheduledStartTime')
+        return {"duration": 0, "upcoming": 1, **({"published": scheduled} if scheduled else {})}
+    return {"duration": duration}
+
+
 def set_last_update(key):
     randomDB.update_one({"_id": key}, {"$set": {"time": now().strftime('%d/%m/%Y %H:%M')}}, upsert=True)
 
@@ -147,7 +158,7 @@ def add_video():
         return ok(f"Video {video_id} added.")
     if videosDB.count_documents({"_id": video_id}):
         return error(f"Video {video_id} is already added.", 409)
-    items = youtube('videos', part='snippet,contentDetails', id=video_id)
+    items = youtube('videos', part='snippet,contentDetails,liveStreamingDetails', id=video_id)
     if not items:
         return error(f"Video {video_id} not found on YouTube.", 404)
     snippet = items[0]['snippet']
@@ -156,9 +167,9 @@ def add_video():
         "published": snippet['publishedAt'],
         "title": snippet['title'],
         "channel": snippet['channelId'],
-        "duration": isodate.parse_duration(items[0]['contentDetails']['duration']).total_seconds(),
         "viewed": 0,
         "hidden": 0,
+        **release(items[0]),
     }
     # The UI shows followed channels from their own record, the others from these fields.
     if not channelsDB.count_documents({"_id": video['channel']}):
@@ -229,6 +240,16 @@ def update_videos():
                 {"$setOnInsert": {**new[item['id']], "duration": duration, "viewed": 0, "hidden": hidden}},
                 upsert=True,
             )
+
+    # Upcoming videos added by link: follow their schedule, drop the ones YouTube no longer has.
+    upcoming = [v['_id'] for v in videosDB.find({"upcoming": 1}, {"_id": 1})]
+    for batch in batches(upcoming):
+        found = set()
+        for item in youtube('videos', part='snippet,contentDetails,liveStreamingDetails', id=','.join(batch), maxResults=50):
+            found.add(item['id'])
+            fields = release(item)
+            videosDB.update_one({"_id": item['id']}, {"$set": fields, **({} if 'upcoming' in fields else {"$unset": {"upcoming": ""}})})
+        videosDB.delete_many({"_id": {"$in": [i for i in batch if i not in found]}})
     set_last_update('last_videos_update')
     return ok('Videos updated.')
 
