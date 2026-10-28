@@ -19,12 +19,13 @@ def iso(days_ago):
 
 FEED = f"""<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">
+<entry><yt:videoId>upcoming</yt:videoId><title>Premiere</title><published>{iso(0)}</published></entry>
 <entry><yt:videoId>long</yt:videoId><title>Long</title><published>{iso(1)}</published></entry>
 <entry><yt:videoId>tiny</yt:videoId><title>Tiny</title><published>{iso(2)}</published></entry>
 <entry><yt:videoId>short</yt:videoId><title>Short</title><published>{iso(3)}</published></entry>
 <entry><yt:videoId>old</yt:videoId><title>Old</title><published>{iso(40)}</published></entry>
 </feed>"""
-DURATIONS = {'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M', 'spotvideo01': 'PT20S', 'spotvideo02': 'PT5M'}
+DURATIONS = {'upcoming': None, 'long': 'PT10M', 'tiny': 'PT45S', 'short': 'PT2M', 'spotvideo01': 'PT20S', 'spotvideo02': 'PT5M'}
 SNIPPETS = {'spotvideo01': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC2', 'channelTitle': 'Two'},
             'spotvideo02': {'publishedAt': '2020-01-01T00:00:00Z', 'title': 'Spot', 'channelId': 'UC1', 'channelTitle': 'One'}}
 CHANNEL = {'id': 'UC1', 'snippet': {'title': 'One', 'description': 'd', 'publishedAt': 'x',
@@ -37,7 +38,8 @@ def fake_youtube(endpoint, **params):
     if endpoint == 'channels':
         return [{**CHANNEL, 'id': i} for i in params['id'].split(',') if i in ('UC1', 'UC2')]
     if endpoint == 'videos':
-        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]}, 'snippet': SNIPPETS.get(i)}
+        # A scheduled premiere has no duration yet.
+        return [{'id': i, 'contentDetails': {'duration': DURATIONS[i]} if DURATIONS[i] else {}, 'snippet': SNIPPETS.get(i)}
                 for i in params['id'].split(',') if i in DURATIONS]
     return [{'id': {'channelId': 'UC1'}, 'snippet': {}}]
 
@@ -58,14 +60,20 @@ assert c.post('/add/channel', json={'channel_id': 'UC1'}).status_code == 200
 assert c.post('/add/channel', json={'channel_id': 'UC1'}).status_code == 409
 assert c.get('/get/channels').json['data']['UC1']['subscriberCount'] == 0, 'hidden subscriber count'
 
-# Import: recent videos only, shorts hidden, known videos not looked up again
+# Import: recent videos only, shorts hidden, known videos not looked up again,
+# videos without a duration yet skipped and looked up again on the next run
 assert c.get('/update/videos').status_code == 200
 videos = {v['_id']: v for v in main.videosDB.find()}
 assert set(videos) == {'long', 'tiny', 'short'}, videos
 assert (videos['long']['hidden'], videos['tiny']['hidden'], videos['short']['hidden']) == (0, 1, 1)
 calls.clear()
 c.get('/update/videos')
-assert not [x for x in calls if x[0] == 'videos'], calls
+assert [x for x in calls if x[0] == 'videos'] == [('videos', 'upcoming')], calls
+DURATIONS['upcoming'] = 'PT1H'
+c.get('/update/videos')
+assert main.videosDB.find_one({'_id': 'upcoming'})['hidden'] == 0
+main.videosDB.delete_one({'_id': 'upcoming'})
+DURATIONS['upcoming'] = None
 assert [v['_id'] for v in c.get('/get/videos').json['data']] == ['long']
 
 stats = c.get('/stats').json['data']

@@ -216,7 +216,12 @@ def update_videos():
     known = {v['_id'] for v in videosDB.find({"_id": {"$in": list(new)}}, {"_id": 1})}
     for batch in batches([i for i in new if i not in known]):
         for item in youtube('videos', part='contentDetails', id=','.join(batch), maxResults=50):
-            duration = isodate.parse_duration(item['contentDetails']['duration']).total_seconds()
+            # Scheduled premieres and live streams have no duration yet: skip them
+            # without storing, so a later run picks them up once they have one.
+            duration = item.get('contentDetails', {}).get('duration')
+            if not duration:
+                continue
+            duration = isodate.parse_duration(duration).total_seconds()
             # Shorts last at most 3 minutes, so only those need the (slow) redirect check.
             hidden = 1 if duration <= 62 or (duration <= 180 and is_short(item['id'])) else 0
             videosDB.update_one(
