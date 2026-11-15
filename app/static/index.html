@@ -246,8 +246,9 @@ function dur(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = Math.floor(sec % 60);
   return (h ? h + ':' : '') + String(m).padStart(h ? 2 : 1, '0') + ':' + String(s).padStart(2, '0');
 }
+// Rounded to whole minutes before the split, so 1 h 59 min 30 s carries into "2 h 0 min".
 function span(sec) {
-  const h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60);
+  const min = Math.round(sec / 60), h = Math.floor(min / 60), m = min % 60;
   return h ? `${h} h ${m} min` : `${m} min`;
 }
 function day(date) {
