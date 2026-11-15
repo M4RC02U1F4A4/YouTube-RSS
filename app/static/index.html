@@ -10,7 +10,7 @@
   :root {
     color-scheme: dark;
     --bg: #171a21; --surface: #232733; --line: #2f3442; --fg: #e8e6e1; --muted: #8b90a0;
-    --accent: #f2b134; --on-accent: #171a21; --done: #5fb88a; --danger: #e5604f;
+    --accent: #f2b134; --on-accent: #171a21; --done: #5fb88a; --danger: #e5604f; --arrow: var(--accent);
     --ch-l: 62%; --ch-bg-l: 30%;
     --display: "Bricolage Grotesque", system-ui, sans-serif;
   }
@@ -18,7 +18,7 @@
     :root {
       color-scheme: light;
       --bg: #eef0f4; --surface: #fff; --line: #d9dce4; --fg: #1b1e26; --muted: #5d6373;
-      --accent: #f2b134; --on-accent: #1b1e26; --done: #2f8a5c; --danger: #c43d2c;
+      --accent: #f2b134; --on-accent: #1b1e26; --done: #2f8a5c; --danger: #c43d2c; --arrow: var(--fg);
       --ch-l: 45%; --ch-bg-l: 82%;
     }
   }
@@ -46,7 +46,7 @@
   .bar a { min-width: 0; flex-basis: 0; background: hsl(var(--h) 65% var(--ch-l)); }
   .bar a:hover { filter: brightness(1.25); }
 
-  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
   .chip { display: flex; align-items: center; gap: .5rem; padding: .25rem .8rem .25rem .25rem; border-radius: 999px; background: var(--surface); font-size: 14px; border: 1px solid transparent; }
   .chip small { color: var(--muted); font-variant-numeric: tabular-nums; }
   .chip.active { border-color: hsl(var(--h) 65% var(--ch-l)); }
@@ -60,9 +60,19 @@
     box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px hsl(var(--h) 65% var(--ch-l)); }
   .chip .avatar { width: 26px; height: 26px; font-size: 11px; box-shadow: none; }
 
+  .sort { display: flex; align-items: center; gap: .6rem; margin-bottom: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+  .sort .label { color: var(--muted); font-size: 14px; }
+  .seg { display: flex; padding: 3px; border-radius: 999px; background: var(--surface); }
+  .seg button { border: 0; background: none; color: var(--muted); font-size: 14px; padding: .3em .95em; }
+  .seg button:hover { color: var(--fg); }
+  .seg button[aria-pressed="true"] { background: var(--bg); color: var(--fg); font-weight: 600; }
+  .dir { display: flex; align-items: center; gap: .45rem; font-size: 14px; padding: .38em .95em .38em .75em; }
+  .dir svg { color: var(--arrow); }
+
   section { margin-bottom: 2.5rem; }
   section h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; margin-bottom: 1rem; display: flex; align-items: baseline; gap: .75rem; }
   section h2 small { font: 400 14px system-ui, sans-serif; color: var(--muted); }
+  section h2 .avatar { width: 30px; height: 30px; font-size: 12px; align-self: center; }
   .grid { display: grid; gap: 1.75rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
   /* Off-screen cards skip layout and paint: keeps "All videos" fast with thousands of entries.
@@ -94,8 +104,14 @@
     body > header nav { order: 3; flex-basis: 100%; gap: 0; padding: 3px; border-radius: 999px; background: var(--surface); }
     body > header nav a { flex: 1; text-align: center; }
     body > header nav a.active { background: var(--bg); }
-    .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 2rem; padding: 0 16px; }
+    .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 1rem; padding: 0 16px; }
     .chip { flex: none; }
+    /* The four keys share the row with a round direction button that shows only its arrow. */
+    .sort { gap: .5rem; padding-top: 1rem; margin-bottom: 1.75rem; }
+    .sort .label, .dir .txt { display: none; }
+    .seg { flex: 1; }
+    .seg button { flex: 1; padding: .35em 0; }
+    .dir { width: 40px; height: 40px; padding: 0; flex: none; justify-content: center; }
   }
   @media (pointer: coarse) {
     .check { width: 44px; height: 44px; }
@@ -188,6 +204,21 @@
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let videos = [], channels = {}, stats = {}, filter = null, chipsOpen = false;
 
+// How the video lists are ordered and split into sections. dir holds the [ascending, descending] labels.
+const SORTS = {
+  release: { label: 'Release', desc: true, dir: ['Oldest first', 'Newest first'] },
+  channel: { label: 'Channel', desc: false, dir: ['A to Z', 'Z to A'] },
+  title: { label: 'Title', desc: false, dir: ['A to Z', 'Z to A'] },
+  duration: { label: 'Duration', desc: false, dir: ['Shortest first', 'Longest first'] },
+};
+let sort = { key: 'release', desc: true };
+try { const s = JSON.parse(localStorage.getItem('sort')); if (SORTS[s?.key]) sort = { key: s.key, desc: !!s.desc }; } catch {}
+function setSort(s) {
+  sort = s;
+  try { localStorage.setItem('sort', JSON.stringify(sort)); } catch {}
+  render();
+}
+
 async function api(path, opts) {
   const r = await fetch(path, opts), body = await r.json().catch(() => ({}));
   if (!r.ok) { toast(body.message || `Request failed (${r.status}).`); throw new Error(body.message); }
@@ -227,10 +258,13 @@ const avatar = c =>
   `<span class="avatar" style="--h:${hue(c._id)};background-image:url('${esc(c.logo)}')">${c.logo ? '' : esc(c.title[0])}</span>`;
 const icon = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const CHECK = icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), UNDO = icon('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>');
+const DOWN = icon('<path d="M12 5v14M6 13l6 6 6-6"/>'), UP = icon('<path d="M12 19V5M6 11l6-6 6 6"/>');
+
+// Videos added by hand can come from channels you don't follow: no record, so no filter either.
+const channelOf = v => channels[v.channel] || { _id: v.channel, title: v.channel_title || '?', logo: v.channel_logo || '' };
 
 function videoCard(v) {
-  // Videos added by hand can come from channels you don't follow: no record, so no filter either.
-  const c = channels[v.channel] || { _id: v.channel, title: v.channel_title || '?', logo: v.channel_logo || '' }, id = esc(v._id);
+  const c = channelOf(v), id = esc(v._id);
   const f = channels[v.channel] ? ` data-filter="${esc(c._id)}"` : '';
   return `<article class="video${v.viewed ? ' watched' : ''}" id="v-${id}" data-id="${id}" tabindex="0">
     <div class="thumb">
@@ -287,20 +321,53 @@ function videosPage(page) {
   const chips = Object.keys(counts).filter(id => channels[id]).sort((a, b) => counts[b] - counts[a]).map(id =>
     `<a class="chip${filter === id ? ' active' : ''}" data-filter="${esc(id)}" style="--h:${hue(id)}">${avatar(channels[id])}${esc(channels[id].title)} <small>${counts[id]}</small></a>`).join('');
 
-  const groups = {};
-  // Upcoming premieres and live streams have no duration yet, they go first.
-  shown.forEach(v => (groups[v.upcoming ? 'Upcoming' : day(v.published)] ??= []).push(v));
-  const sections = ['Upcoming', 'Today', 'Yesterday', 'This week', 'Earlier'].filter(k => groups[k]).map(k => `<section>
-    <h2>${k} <small>${plural(groups[k].length, 'video')}${k === 'Upcoming' ? '' : `, ${span(groups[k].reduce((s, v) => s + v.duration, 0))}`}</small></h2>
-    <div class="grid">${groups[k].map(videoCard).join('')}</div></section>`).join('');
+  // Upcoming premieres and live streams have no duration yet: they stay in their own section on top.
+  // The others are split by the sort key, so the sections come out in the order they are sorted in.
+  const upcoming = ordered(shown.filter(v => v.upcoming)), out = ordered(shown.filter(v => !v.upcoming));
+  const groups = new Map(upcoming.length ? [['Upcoming', upcoming]] : []);
+  out.forEach(v => { const k = SECTION[sort.key](v); groups.has(k) ? groups.get(k).push(v) : groups.set(k, [v]); });
+  const sections = [...groups].map(([k, vs]) => {
+    const name = k === 'Upcoming' ? k : sort.key === 'channel' ? avatar(channelOf(vs[0])) + esc(channelOf(vs[0]).title) : k;
+    return `<section>${name ? `
+    <h2>${name} <small>${plural(vs.length, 'video')}${k === 'Upcoming' ? '' : `, ${span(vs.reduce((s, v) => s + v.duration, 0))}`}</small></h2>` : ''}
+    <div class="grid">${vs.map(videoCard).join('')}</div></section>`;
+  }).join('');
+
+  const s = SORTS[sort.key], dir = s.dir[+sort.desc];
+  const sortBar = `<div class="sort"><span class="label" id="sort-label">Sort by</span>
+    <div class="seg" role="group" aria-labelledby="sort-label">${Object.entries(SORTS).map(([k, o]) =>
+      `<button data-sort="${k}" aria-pressed="${sort.key === k}">${o.label}</button>`).join('')}</div>
+    <button class="dir" data-sort-dir aria-label="${dir}" title="${dir}">${sort.desc ? DOWN : UP}<span class="txt">${dir}</span></button></div>`;
 
   return (page === 'queue' ? `<div class="summary">
       <h1>${span(total)} to watch</h1>
       <p>${plural(shown.length, 'video')}${filter ? ` from ${esc(channels[filter].title)}` : ` from ${plural(Object.keys(counts).length, 'channel')}`}</p>
-      <div class="bar">${shown.filter(v => !v.upcoming).map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
+      <div class="bar">${out.map(v => `<a data-jump="${esc(v._id)}" style="flex-grow:${v.duration};--h:${hue(v.channel)}" title="${esc(v.title)} (${dur(v.duration)})"></a>`).join('')}</div>
     </div>` : '') +
-    `<div class="chips${filter ? ' filtering' : ''}">${chips}<button class="chip more" data-chips></button></div>` + sections;
+    `<div class="chips${filter ? ' filtering' : ''}">${chips}<button class="chip more" data-chips></button></div>` + sortBar + sections;
 }
+
+const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+const SORT_BY = {
+  release: v => +new Date(v.published),
+  channel: v => channelOf(v).title,
+  title: v => v.title,
+  duration: v => v.duration || 0,
+};
+// Ties, and the videos inside a channel, are always newest first.
+function ordered(list) {
+  const by = SORT_BY[sort.key], sign = sort.desc ? -1 : 1;
+  const cmp = (a, b) => typeof a === 'string' ? collator.compare(a, b) : a - b;
+  return list.sort((a, b) => sign * cmp(by(a), by(b)) || new Date(b.published) - new Date(a.published));
+}
+// The section each video goes in; '' is one section without a heading.
+const LENGTHS = [[600, 'Under 10 min'], [1800, '10–30 min'], [3600, '30–60 min'], [Infinity, 'Over 1 hour']];
+const SECTION = {
+  release: v => day(v.published),
+  channel: v => v.channel,
+  title: () => '',
+  duration: v => LENGTHS.find(([max]) => v.duration < max)[1],
+};
 
 // With many channels the chips would push the videos far down: keep them to three rows,
 // always including the active one, and put the rest behind a "+N more" chip.
@@ -383,7 +450,7 @@ async function loadStats() {
 
 // One click handler for the whole page, driven by data-* attributes.
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-chips],[data-add],[data-remove],[data-update],[data-dialog]');
+  const t = e.target.closest('[data-open],[data-watch],[data-tbwatch],[data-filter],[data-jump],[data-chips],[data-sort],[data-sort-dir],[data-add],[data-remove],[data-update],[data-dialog]');
   if (!t) return;
   // Mouse clicks have detail >= 1; Enter on a card or a focused button gives 0.
   const d = t.dataset, keyboard = e.detail === 0;
@@ -392,6 +459,9 @@ document.addEventListener('click', async e => {
   else if (d.tbwatch) setViewed(d.tbwatch, false);
   else if (d.filter) { filter = filter === d.filter ? null : d.filter; location.hash === '#channels' ? location.hash = 'queue' : render(); }
   else if ('chips' in d) { chipsOpen = !chipsOpen; fitChips(); }
+  // A new key starts from its own default direction; the arrow button flips it.
+  else if (d.sort) { if (d.sort !== sort.key) setSort({ key: d.sort, desc: SORTS[d.sort].desc }); }
+  else if ('sortDir' in d) setSort({ ...sort, desc: !sort.desc });
   else if (d.jump) { const el = document.getElementById('v-' + d.jump); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' }); }
   else if (d.add) { await post('/add/channel', { channel_id: d.add }); t.outerHTML = '<span class="hint">Added</span>'; load(); }
   else if (d.remove) {
