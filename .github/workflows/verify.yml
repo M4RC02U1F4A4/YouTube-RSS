@@ -1,0 +1,101 @@
+name: Verify
+
+# Nothing here publishes anything — it proves the app still works before a
+# change lands. Images are published by release.yml (every push to main) and
+# build-test.yml (manual `:dev` builds).
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/verify.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/verify.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  test:
+    name: API tests
+    runs-on: ubuntu-latest
+    # A throwaway MongoDB, as test_main.py expects. YouTube is faked out there.
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # In the Dockerfile's own base image rather than with setup-python: the
+      # tests run on the exact Python the image ships, and there is no second
+      # version to keep in step with the Dockerfile.
+      - name: Run test_main.py
+        run: |
+          set -eu
+          base=$(sed -n 's/^FROM \([^ ]*\).*/\1/p' app/Dockerfile | head -n 1)
+          echo "Running on ${base}"
+          docker run --rm --network host -v "$PWD/app:/app" -w /app \
+            -e MONGODB_HOST=127.0.0.1 -e MONGODB_PORT=27017 \
+            "$base" sh -c 'pip install --quiet --root-user-action=ignore -r requirements.txt && python test_main.py'
+
+  build:
+    name: Image builds and starts
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build (no push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: app
+          # One architecture is enough to catch a broken Dockerfile; the
+          # publishing workflows are what exercise both.
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ytrss:ci
+          cache-from: type=gha,scope=verify
+          cache-to: type=gha,mode=max,scope=verify
+
+      # A build proves the layers assemble; this proves the thing starts, talks
+      # to MongoDB and serves the page.
+      - name: Smoke test
+        run: |
+          set -eu
+          docker run -d --name ytrss --network host \
+            -e MONGODB_HOST=127.0.0.1 -e MONGODB_PORT=27017 ytrss:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/stats >/dev/null 2>&1; then
+              curl -fsS http://127.0.0.1:8080/stats
+              echo
+              curl -fsS http://127.0.0.1:8080/ | grep -q '<title>YouTube RSS</title>'
+              echo "The app is up and serves the page."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::the app did not answer on /stats within 30 s"
+          docker logs ytrss
+          exit 1

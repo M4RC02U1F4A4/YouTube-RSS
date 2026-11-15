@@ -69,3 +69,14 @@ docker run -d --rm -p 27017:27017 --name ytrss-test mongo
 cd app && pip install -r requirements.txt
 MONGODB_HOST=localhost MONGODB_PORT=27017 python test_main.py
 ```
+
+## Releases
+
+Every push to `main` is a release. `.github/workflows/release.yml` takes the latest version tag and bumps it once for each commit after it, read from the [Conventional Commits](https://www.conventionalcommits.org/) subject: `type!:` is major, `feat:` minor, anything else patch. It then publishes `ghcr.io/m4rc02u1f4a4/ytrss:<version>` and `:latest` for `linux/amd64` and `linux/arm64`, pushes the tag and writes the GitHub Release from the commit subjects. So the commit type decides the version number: use `feat:` only for something users can now do or see.
+
+| Workflow | When | What |
+|---|---|---|
+| `release.yml` | every push to `main` | version, image, tag, GitHub Release |
+| `verify.yml` | pull requests and pushes that touch `app/` | `test_main.py` against MongoDB, image build and smoke test; publishes nothing |
+| `build-test.yml` | by hand, any branch | publishes `ytrss:dev` |
+| `check_pr.yml` | pull requests | the title must be a Conventional Commit |

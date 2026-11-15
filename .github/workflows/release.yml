@@ -1,0 +1,323 @@
+# On every push to main:
+#   1. compute the next version from the latest semver tag plus the commits after
+#      it (type!: major, feat: minor, anything else: patch — see
+#      .github/scripts/next-version.sh);
+#   2. publish ghcr.io/m4rc02u1f4a4/ytrss as <version> and latest. The image is
+#      rebuilt when something under app/ changed since the previous release,
+#      otherwise the previous release is retagged;
+#   3. only once the image is published, create and push the git tag <version>
+#      (no "v" prefix), then publish the GitHub Release.
+#
+# The manual build-test.yml still publishes `:dev` test builds from any branch;
+# this one never touches `:dev`.
+#
+# Pushing the tag does not re-trigger this workflow (it only runs on branches).
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# One release at a time, in order: two quick pushes must not compute the same
+# version.
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # push the tag
+  packages: write   # push to ghcr.io
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  # What ends up in the image. Err on the side of too many: an extra path costs
+  # a useless build, a missing one ships a stale image.
+  IMAGE_PATHS: app
+
+jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      previous: ${{ steps.next.outputs.previous }}
+      skip: ${{ steps.next.outputs.skip }}
+      rebuild: ${{ steps.changed.outputs.rebuild }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0     # full history for git describe and the log
+          fetch-tags: true
+
+      - name: Check the version script
+        run: sh .github/scripts/next-version.test.sh
+
+      - name: Next version
+        id: next
+        run: |
+          set -eu
+          version=$(.github/scripts/next-version.sh)
+          previous=$(.github/scripts/next-version.sh --previous)
+          echo "previous=${previous}" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/${version}" >/dev/null; then
+            echo "HEAD is already tagged ${version}: nothing to release."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "### Version: \`${version}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # The comparison is against the last RELEASED version, not the previous
+      # push: a release that failed halfway leaves no tag behind. A git tag only
+      # exists once the image was published (see the `tag` job), so the image
+      # of `previous` is guaranteed to exist and can be retagged.
+      - name: Did the image change?
+        id: changed
+        if: steps.next.outputs.skip != 'true'
+        env:
+          PREV: ${{ steps.next.outputs.previous }}
+        run: |
+          set -eu
+          # shellcheck disable=SC2086 # IMAGE_PATHS is a space-separated list
+          if [ -z "$PREV" ] || ! git diff --quiet "$PREV" HEAD -- $IMAGE_PATHS; then
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            echo "- \`ytrss\`: rebuilt" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "rebuild=false" >> "$GITHUB_OUTPUT"
+            echo "- \`ytrss\`: retagged from \`${PREV}\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: Build (${{ matrix.arch }})
+    needs: version
+    if: needs.version.outputs.skip != 'true' && needs.version.outputs.rebuild == 'true'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Compute lowercase image name
+        # GHCR rejects repository names with uppercase characters.
+        run: echo "IMAGE=ghcr.io/${OWNER,,}/ytrss" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: app
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          # Scopes of their own: sharing one with the `:dev` or verify builds
+          # would let those write layers a release then reuses.
+          cache-from: type=gha,scope=release-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=release-${{ matrix.arch }}
+          # `source` connects the GHCR package to this repository.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          # Attestations would show up as extra `unknown/unknown` entries in
+          # the manifest list; nothing here consumes them.
+          provenance: false
+          sbom: false
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish ${{ needs.version.outputs.version }}
+    needs: [version, build]
+    # After a successful build, or on its own when nothing had to be rebuilt
+    # (then the image is retagged from the previous release).
+    if: >-
+      !cancelled() && needs.version.result == 'success' &&
+      needs.version.outputs.skip != 'true' &&
+      (needs.build.result == 'success' ||
+       (needs.build.result == 'skipped' && needs.version.outputs.rebuild == 'false'))
+    runs-on: ubuntu-latest
+    env:
+      REBUILT: ${{ needs.version.outputs.rebuild }}
+      VERSION: ${{ needs.version.outputs.version }}
+      PREV: ${{ needs.version.outputs.previous }}
+    steps:
+      - name: Compute lowercase image name
+        run: echo "IMAGE=ghcr.io/${OWNER,,}/ytrss" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download digests
+        if: env.REBUILT == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: /tmp/digests
+          pattern: release-digests-*
+          merge-multiple: true
+
+      # A rebuilt image gets a manifest list over its per-arch digests; an
+      # unchanged one gets the new tags added to the previous release's
+      # manifest (metadata only, no layers travel, older tags stay put).
+      #
+      # GHCR sometimes 404s a manifest it accepted seconds earlier: the digests
+      # are in the registry but briefly not readable through /v2/.../manifests,
+      # and `imagetools create` fails on an otherwise perfect build. Retry
+      # instead of making the operator re-run the whole workflow.
+      - name: Tag ${{ needs.version.outputs.version }} and latest
+        run: |
+          set -eu
+          if [ "$REBUILT" = "true" ]; then
+            shopt -s nullglob
+            digests=(/tmp/digests/*)
+            if [ ${#digests[@]} -eq 0 ]; then
+              echo "::error::no digest files were downloaded — the build jobs did not upload any"
+              exit 1
+            fi
+            sources=$(for d in "${digests[@]}"; do printf '%s@sha256:%s ' "$IMAGE" "$(basename "$d")"; done)
+          else
+            sources="${IMAGE}:${PREV}"
+          fi
+          for attempt in 1 2 3 4 5; do
+            # shellcheck disable=SC2086 # sources is a space-separated list
+            # The manifest list carries `source` too: GHCR reads it there for a
+            # multi-arch image.
+            if docker buildx imagetools create \
+                 --annotation "index:org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+                 --annotation "index:org.opencontainers.image.licenses=MIT" \
+                 --tag "${IMAGE}:${VERSION}" --tag "${IMAGE}:latest" $sources; then
+              echo "Published ${IMAGE}:${VERSION} on attempt ${attempt}."
+              docker buildx imagetools inspect "${IMAGE}:${VERSION}"
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              wait=$((attempt * 10))
+              echo "::warning::imagetools create failed (attempt ${attempt}/5) — GHCR may not have propagated a digest yet; retrying in ${wait}s"
+              sleep "$wait"
+            fi
+          done
+          echo "::error::could not publish ${IMAGE}:${VERSION} after 5 attempts"
+          exit 1
+
+  tag:
+    name: Tag ${{ needs.version.outputs.version }}
+    needs: [version, publish]
+    if: >-
+      !cancelled() && needs.version.outputs.skip != 'true' &&
+      needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0     # the release notes list the commits since `previous`
+          fetch-tags: true
+
+      - name: Create and push the tag
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -eu
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "Release ${VERSION}" "$GITHUB_SHA"
+          # GitHub intermittently answers 500 to a ref push — sometimes AFTER
+          # creating the ref. So a failed attempt first reads the remote tag: on
+          # this commit = done (a re-run lands here too); on another commit =
+          # never overwrite a release.
+          for attempt in 1 2 3 4 5; do
+            if git push origin "refs/tags/${VERSION}"; then
+              break
+            fi
+            remote=$(git ls-remote origin "refs/tags/${VERSION}^{}" | cut -f1)
+            if [ "$remote" = "$GITHUB_SHA" ]; then
+              echo "Tag ${VERSION} is already on ${GITHUB_SHA}."
+              break
+            fi
+            if [ -n "$remote" ]; then
+              echo "::error::tag ${VERSION} already exists on ${remote}, not ${GITHUB_SHA}"
+              exit 1
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::could not push tag ${VERSION} after 5 attempts"
+              exit 1
+            fi
+            wait=$((attempt * 15))
+            echo "::warning::tag push failed (attempt ${attempt}/5); retrying in ${wait}s"
+            sleep "$wait"
+          done
+          echo "Tagged ${VERSION} at ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
+
+      # The GitHub Release only describes what the tag already is: the image
+      # and the tag are the release. So a failure here warns instead of failing
+      # the run — a re-run would skip anyway, HEAD being tagged by then — and
+      # prints the command that publishes it by hand. Notes come from the
+      # commits, not from `--generate-notes`, which lists merged pull requests
+      # and most changes here are pushed straight to `main`.
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          PREV: ${{ needs.version.outputs.previous }}
+          REBUILT: ${{ needs.version.outputs.rebuild }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -eu
+          {
+            echo "## Changes"
+            echo
+            git log --no-merges --format='- %s (%h)' "${PREV:+${PREV}..}${VERSION}"
+            echo
+            echo "## Image"
+            echo
+            echo "- \`ghcr.io/${OWNER,,}/ytrss:${VERSION}\`$([ "$REBUILT" = "true" ] || echo " (unchanged since ${PREV})")"
+          } > release-notes.md
+          if gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file release-notes.md; then
+            echo "Published the GitHub Release ${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::GitHub Release ${VERSION} not created; the tag and the image are published. By hand: gh release create ${VERSION} --verify-tag --generate-notes"
+          fi
